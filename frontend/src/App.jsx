@@ -442,7 +442,7 @@ export default function App() {
         <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:4 }}>
           {members.map(m => (
             <div key={m.id} className="btn"
-              onClick={() => { setActiveMemberID(m.id); setView("home"); }}
+              onClick={() => { setActiveMemberID(m.id); setView("home"); setActiveTab(m.id === myID ? "chores" : "history"); }}
               style={{ display:"flex", flexDirection:"column", alignItems:"center",
                 padding:"8px 12px", borderRadius:16, flexShrink:0,
                 background: activeMemberID===m.id ? m.color+"33" : "#1E1E35",
@@ -527,18 +527,20 @@ export default function App() {
             )}
           </div>
 
-          {/* Tab bar */}
-          <div style={{ display:"flex", background:"#1E1E35", borderRadius:16, padding:4, marginBottom:20, gap:4 }}>
-            {[["chores", activeMemberID === myID ? "Что сделал?" : "Дела"], ["history", "История"]].map(([tab, label]) => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                style={{ flex:1, padding:"10px 0", borderRadius:12, border:"none", cursor:"pointer",
-                  fontFamily:"inherit", fontWeight:700, fontSize:14, transition:"all 0.2s",
-                  background: activeTab === tab ? activeMember.color : "transparent",
-                  color: activeTab === tab ? "#0F0F1A" : "#666" }}>
-                {label}
-              </button>
-            ))}
-          </div>
+          {/* Tab bar — only on own profile */}
+          {activeMemberID === myID && (
+            <div style={{ display:"flex", background:"#1E1E35", borderRadius:16, padding:4, marginBottom:20, gap:4 }}>
+              {[["chores", "Что сделал?"], ["history", "История"]].map(([tab, label]) => (
+                <button key={tab} onClick={() => setActiveTab(tab)}
+                  style={{ flex:1, padding:"10px 0", borderRadius:12, border:"none", cursor:"pointer",
+                    fontFamily:"inherit", fontWeight:700, fontSize:14, transition:"all 0.2s",
+                    background: activeTab === tab ? activeMember.color : "transparent",
+                    color: activeTab === tab ? "#0F0F1A" : "#666" }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Chores — own profile only */}
           {activeTab === "chores" && activeMemberID === myID && (
