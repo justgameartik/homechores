@@ -163,6 +163,10 @@ export default function App() {
   const [customName, setCustomName] = useState("");
   const [customPoints, setCustomPoints] = useState(10);
   const [customEmoji, setCustomEmoji] = useState("✨");
+  const [addingPenalty, setAddingPenalty] = useState(false);
+  const [penaltyName, setPenaltyName] = useState("");
+  const [penaltyPoints, setPenaltyPoints] = useState(10);
+  const [penaltyEmoji, setPenaltyEmoji] = useState("⚠️");
   const [loading, setLoading] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [editingChore, setEditingChore] = useState(null);
@@ -242,6 +246,13 @@ export default function App() {
     await api.addChore({ name: customName, emoji: customEmoji, points: Number(customPoints) });
     setCustomName(""); setCustomPoints(10); setCustomEmoji("✨");
     setAddingCustom(false);
+    await loadChores();
+  }
+  async function doAddPenalty() {
+    if (!penaltyName.trim()) return;
+    await api.addChore({ name: penaltyName, emoji: penaltyEmoji, points: Number(penaltyPoints), is_penalty: true });
+    setPenaltyName(""); setPenaltyPoints(10); setPenaltyEmoji("⚠️");
+    setAddingPenalty(false);
     await loadChores();
   }
 
@@ -582,31 +593,66 @@ export default function App() {
               </div>
 
               {/* Штрафы */}
-              {penaltyChores.length > 0 && (
-                <>
-                  <div style={{ fontSize:12, fontWeight:700, color:"#FF6B6B", letterSpacing:2,
-                    textTransform:"uppercase", marginBottom:12 }}>⚠️ Штрафы</div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
-                    {penaltyChores.map(c => (
-                      <button key={c.id} className="btn"
-                        onClick={() => editMode ? setEditingChore(c) : doLogChore(c)}
-                        disabled={loading && !editMode}
-                        style={{ background:"#FF6B6B11",
-                          border: editMode ? "1px solid #FF6B6B66" : "1px solid #FF6B6B33",
-                          borderRadius:18, padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
-                          cursor:"pointer", textAlign:"left", color:"#F0EEF6", fontFamily:"inherit" }}>
-                        <div style={{ fontSize:26 }}>{c.emoji}</div>
-                        <div>
-                          <div style={{ fontSize:13, fontWeight:700, lineHeight:1.2 }}>{c.name}</div>
-                          <div style={{ fontSize:11, fontWeight:800, color:"#FF6B6B", marginTop:2 }}>
-                            {editMode ? "нажми для правки" : `-${c.points} pts`}
-                          </div>
+              <>
+                <div style={{ fontSize:12, fontWeight:700, color:"#FF6B6B", letterSpacing:2,
+                  textTransform:"uppercase", marginBottom:12 }}>⚠️ Штрафы</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
+                  {penaltyChores.map(c => (
+                    <button key={c.id} className="btn"
+                      onClick={() => editMode ? setEditingChore(c) : doLogChore(c)}
+                      disabled={loading && !editMode}
+                      style={{ background:"#FF6B6B11",
+                        border: editMode ? "1px solid #FF6B6B66" : "1px solid #FF6B6B33",
+                        borderRadius:18, padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
+                        cursor:"pointer", textAlign:"left", color:"#F0EEF6", fontFamily:"inherit" }}>
+                      <div style={{ fontSize:26 }}>{c.emoji}</div>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:700, lineHeight:1.2 }}>{c.name}</div>
+                        <div style={{ fontSize:11, fontWeight:800, color:"#FF6B6B", marginTop:2 }}>
+                          {editMode ? "нажми для правки" : `-${c.points} pts`}
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+                      </div>
+                    </button>
+                  ))}
+
+                  {!editMode && (!addingPenalty ? (
+                    <button className="btn" onClick={() => setAddingPenalty(true)}
+                      style={{ background:"#FF6B6B08", border:"1px dashed #FF6B6B44", borderRadius:18,
+                        padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
+                        cursor:"pointer", color:"#FF6B6B66", fontFamily:"inherit" }}>
+                      <div style={{ fontSize:26 }}>⚠️</div>
+                      <div><div style={{ fontSize:13, fontWeight:700 }}>Своё штрафное</div></div>
+                    </button>
+                  ) : (
+                    <div style={{ background:"#FF6B6B0D", border:"1px solid #FF6B6B33",
+                      borderRadius:18, padding:12, gridColumn:"1 / -1" }}>
+                      <div style={{ display:"flex", gap:8, marginBottom:8 }}>
+                        <input value={penaltyEmoji} onChange={e => setPenaltyEmoji(e.target.value)}
+                          style={{ background:"#0F0F1A", border:"1px solid #333", borderRadius:10, color:"#F0EEF6",
+                            fontFamily:"inherit", width:50, textAlign:"center", fontSize:20, padding:"8px" }} />
+                        <input value={penaltyName} onChange={e => setPenaltyName(e.target.value)}
+                          placeholder="За что штраф..."
+                          style={{ background:"#0F0F1A", border:"1px solid #333", borderRadius:10, color:"#F0EEF6",
+                            fontFamily:"inherit", flex:1, fontSize:14, padding:"8px 12px" }} />
+                      </div>
+                      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                        <input type="number" value={penaltyPoints} onChange={e => setPenaltyPoints(e.target.value)}
+                          min={1} max={100}
+                          style={{ background:"#0F0F1A", border:"1px solid #333", borderRadius:10, color:"#FF6B6B",
+                            fontFamily:"inherit", width:70, fontWeight:800, padding:"8px 10px", fontSize:14 }} />
+                        <span style={{ fontSize:12, color:"#666" }}>pts</span>
+                        <button onClick={doAddPenalty}
+                          style={{ marginLeft:"auto", padding:"8px 16px", background:"#FF6B6B",
+                            color:"#fff", border:"none", borderRadius:10,
+                            fontWeight:800, cursor:"pointer", fontFamily:"inherit" }}>Добавить</button>
+                        <button onClick={() => setAddingPenalty(false)}
+                          style={{ padding:"8px 12px", background:"transparent", color:"#555",
+                            border:"none", borderRadius:10, cursor:"pointer", fontFamily:"inherit" }}>✕</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             </>
           )}
 
