@@ -619,21 +619,24 @@ export default function App() {
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                 {history.slice(0, 10).map(h => {
-                  const offset = swipeState[h.id] || 0;
+                  const isMine = activeMemberID === myID;
+                  const offset = isMine ? (swipeState[h.id] || 0) : 0;
                   return (
                     <div key={h.id} style={{ position:"relative", overflow:"hidden", borderRadius:12 }}>
-                      <div style={{ position:"absolute", inset:0, background:"#FF6B6B22",
-                        display:"flex", alignItems:"center", justifyContent:"flex-end",
-                        paddingRight:16, borderRadius:12 }}>
-                        <span style={{ fontSize:16 }}>🗑</span>
-                      </div>
+                      {isMine && (
+                        <div style={{ position:"absolute", inset:0, background:"#FF6B6B22",
+                          display:"flex", alignItems:"center", justifyContent:"flex-end",
+                          paddingRight:16, borderRadius:12 }}>
+                          <span style={{ fontSize:16 }}>🗑</span>
+                        </div>
+                      )}
                       <div
-                        onTouchStart={e => { swipeStart.current[h.id] = e.touches[0].clientX; }}
-                        onTouchMove={e => {
+                        onTouchStart={isMine ? (e => { swipeStart.current[h.id] = e.touches[0].clientX; }) : undefined}
+                        onTouchMove={isMine ? (e => {
                           const dx = e.touches[0].clientX - (swipeStart.current[h.id] || 0);
                           if (dx < 0) setSwipeState(s => ({ ...s, [h.id]: Math.max(dx, -80) }));
-                        }}
-                        onTouchEnd={() => {
+                        }) : undefined}
+                        onTouchEnd={isMine ? (() => {
                           const offset = swipeState[h.id] || 0;
                           if (offset < -60) {
                             doDeleteLog(h.id);
@@ -641,7 +644,7 @@ export default function App() {
                           } else {
                             setSwipeState(s => ({ ...s, [h.id]: 0 }));
                           }
-                        }}
+                        }) : undefined}
                         style={{ display:"flex", alignItems:"center", gap:10,
                           background:"#1E1E35", borderRadius:12, padding:"10px 14px",
                           transform:`translateX(${offset}px)`,
