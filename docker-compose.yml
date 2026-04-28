@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: homechores
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: homechores
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homechores"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: homechores
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: homechores
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 8080
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
