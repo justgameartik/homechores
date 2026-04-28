@@ -284,6 +284,27 @@ export default function App() {
     } catch(e) { alert(e.message); }
   }
 
+  function formatLogDate(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const time = date.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" });
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear();
+    if (isToday) return `сегодня в ${time}`;
+    if (isYesterday) return `вчера в ${time}`;
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${day}.${month} в ${time}`;
+  }
+
   async function doDeleteLog(logID) {
     try {
       await api.deleteLog(logID);
@@ -633,7 +654,7 @@ export default function App() {
                           {h.is_penalty ? `-${h.points}` : `+${h.points}`}
                         </div>
                         <div style={{ fontSize:11, color:"#444" }}>
-                          {new Date(h.logged_at).toLocaleTimeString("ru", {hour:"2-digit",minute:"2-digit"})}
+                          {formatLogDate(h.logged_at)}
                         </div>
                       </div>
                     </div>
