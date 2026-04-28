@@ -377,15 +377,13 @@ export default function App() {
                 fontWeight:800, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
               🏆
             </button>
-            {isOwner && (
-              <button className="btn" onClick={() => setEditMode(e => !e)}
-                style={{ background:editMode?"#FF6B6B":"#1E1E35",
-                  color:editMode?"#fff":"#888",
-                  border:"none", borderRadius:12, padding:"8px 12px",
-                  fontWeight:800, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
-                ✏️
-              </button>
-            )}
+            <button className="btn" onClick={() => setEditMode(e => !e)}
+              style={{ background:editMode?"#FF6B6B":"#1E1E35",
+                color:editMode?"#fff":"#888",
+                border:"none", borderRadius:12, padding:"8px 12px",
+                fontWeight:800, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
+              ✏️
+            </button>
             <button className="btn" onClick={() => setShowInvite(v => !v)}
               style={{ background:showInvite?"#4ECDC4":"#1E1E35",
                 color:showInvite?"#0F0F1A":"#888",
@@ -573,7 +571,7 @@ export default function App() {
                   </button>
                 ))}
 
-                {!addingCustom ? (
+                {editMode && (!addingCustom ? (
                   <button className="btn" onClick={() => setAddingCustom(true)}
                     style={{ background:"#1E1E35", border:"1px dashed #333", borderRadius:18,
                       padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
@@ -605,7 +603,7 @@ export default function App() {
                           border:"none", borderRadius:10, cursor:"pointer", fontFamily:"inherit" }}>✕</button>
                     </div>
                   </div>
-                )}
+                ))}
               </div>
 
               {/* Штрафы */}
@@ -631,7 +629,7 @@ export default function App() {
                     </button>
                   ))}
 
-                  {!editMode && (!addingPenalty ? (
+                  {editMode && (!addingPenalty ? (
                     <button className="btn" onClick={() => setAddingPenalty(true)}
                       style={{ background:"#FF6B6B08", border:"1px dashed #FF6B6B44", borderRadius:18,
                         padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
