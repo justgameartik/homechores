@@ -158,6 +158,7 @@ export default function App() {
   const [activeMemberID, setActiveMemberID] = useState(null);
   const [history, setHistory] = useState([]);
   const [view, setView] = useState("home");
+  const [activeTab, setActiveTab] = useState("chores");
   const [flash, setFlash] = useState(null);
   const [addingCustom, setAddingCustom] = useState(false);
   const [customName, setCustomName] = useState("");
@@ -528,13 +529,28 @@ export default function App() {
             )}
           </div>
 
+          {/* Tab bar */}
+          <div style={{ display:"flex", background:"#1E1E35", borderRadius:16, padding:4, marginBottom:20, gap:4 }}>
+            {[["chores", activeMemberID === myID ? "Что сделал?" : "Дела"], ["history", "История"]].map(([tab, label]) => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                style={{ flex:1, padding:"10px 0", borderRadius:12, border:"none", cursor:"pointer",
+                  fontFamily:"inherit", fontWeight:700, fontSize:14, transition:"all 0.2s",
+                  background: activeTab === tab ? activeMember.color : "transparent",
+                  color: activeTab === tab ? "#0F0F1A" : "#666" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Chores — own profile only */}
-          {activeMemberID === myID && (
+          {activeTab === "chores" && activeMemberID === myID && (
             <>
-              <div style={{ fontSize:12, fontWeight:700, color:"#666", letterSpacing:2,
-                textTransform:"uppercase", marginBottom:12 }}>
-                {editMode ? "✏️ Режим редактирования" : "Что сделал?"}
-              </div>
+              {editMode && (
+                <div style={{ fontSize:12, fontWeight:700, color:"#FF6B6B", letterSpacing:2,
+                  textTransform:"uppercase", marginBottom:12 }}>
+                  ✏️ Режим редактирования
+                </div>
+              )}
 
               {/* Обычные дела */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:16 }}>
@@ -657,12 +673,13 @@ export default function App() {
           )}
 
           {/* History */}
-          {history.length > 0 && (
+          {activeTab === "history" && history.length === 0 && (
+            <div style={{ textAlign:"center", color:"#444", fontSize:14, padding:"40px 0" }}>
+              Пока нет записей
+            </div>
+          )}
+          {activeTab === "history" && history.length > 0 && (
             <>
-              <div style={{ fontSize:12, fontWeight:700, color:"#666", letterSpacing:2,
-                textTransform:"uppercase", marginBottom:12 }}>
-                {activeMemberID === myID ? "Моя история" : `История — ${activeMember.name}`}
-              </div>
               <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                 {history.slice(0, 10).map(h => {
                   const isMine = activeMemberID === myID;
