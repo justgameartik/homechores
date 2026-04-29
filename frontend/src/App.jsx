@@ -581,10 +581,12 @@ export default function App() {
                       border: editMode ? "1px solid #FF6B6B44" : "1px solid #2a2a3e",
                       borderRadius:18, padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
                       cursor:"pointer", textAlign:"left", color:"#F0EEF6", fontFamily:"inherit",
-                      position:"relative" }}>
-                    <div style={{ fontSize:26 }}>{c.emoji}</div>
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:700, lineHeight:1.2 }}>{c.name}</div>
+                      position:"relative", minHeight:72 }}>
+                    <div style={{ fontSize:26, flexShrink:0 }}>{c.emoji}</div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:13, fontWeight:700, lineHeight:1.3,
+                        overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2,
+                        WebkitBoxOrient:"vertical" }}>{c.name}</div>
                       <div style={{ fontSize:11, fontWeight:800, color: editMode ? "#FF6B6B" : "#FFE66D", marginTop:2 }}>
                         {editMode ? "нажми для правки" : `+${c.points} pts`}
                       </div>
@@ -598,9 +600,9 @@ export default function App() {
                     style={{ background:"linear-gradient(135deg,#FFE66D11,#1E1E35)",
                       border:"1px dashed #FFE66D55", borderRadius:18,
                       padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
-                      cursor:"pointer", color:"#F0EEF6", fontFamily:"inherit" }}>
-                    <div style={{ fontSize:26 }}>⚡</div>
-                    <div>
+                      cursor:"pointer", color:"#F0EEF6", fontFamily:"inherit", minHeight:72 }}>
+                    <div style={{ fontSize:26, flexShrink:0 }}>⚡</div>
+                    <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:13, fontWeight:700 }}>Разовое дело</div>
                       <div style={{ fontSize:11, color:"#FFE66D99", marginTop:2 }}>начислить очки</div>
                     </div>
@@ -611,9 +613,9 @@ export default function App() {
                   <button className="btn" onClick={() => setAddingCustom(true)}
                     style={{ background:"#1E1E35", border:"1px dashed #333", borderRadius:18,
                       padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
-                      cursor:"pointer", color:"#555", fontFamily:"inherit" }}>
-                    <div style={{ fontSize:26 }}>✨</div>
-                    <div><div style={{ fontSize:13, fontWeight:700 }}>Своё дело</div></div>
+                      cursor:"pointer", color:"#555", fontFamily:"inherit", minHeight:72 }}>
+                    <div style={{ fontSize:26, flexShrink:0 }}>✨</div>
+                    <div style={{ flex:1, minWidth:0 }}><div style={{ fontSize:13, fontWeight:700 }}>Своё дело</div></div>
                   </button>
                 ) : (
                   <div style={{ background:"#1E1E35", border:"1px solid #FFE66D44",
@@ -654,10 +656,13 @@ export default function App() {
                       style={{ background:"#FF6B6B11",
                         border: editMode ? "1px solid #FF6B6B66" : "1px solid #FF6B6B33",
                         borderRadius:18, padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
-                        cursor:"pointer", textAlign:"left", color:"#F0EEF6", fontFamily:"inherit" }}>
-                      <div style={{ fontSize:26 }}>{c.emoji}</div>
-                      <div>
-                        <div style={{ fontSize:13, fontWeight:700, lineHeight:1.2 }}>{c.name}</div>
+                        cursor:"pointer", textAlign:"left", color:"#F0EEF6", fontFamily:"inherit",
+                        minHeight:72 }}>
+                      <div style={{ fontSize:26, flexShrink:0 }}>{c.emoji}</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:13, fontWeight:700, lineHeight:1.3,
+                          overflow:"hidden", display:"-webkit-box", WebkitLineClamp:2,
+                          WebkitBoxOrient:"vertical" }}>{c.name}</div>
                         <div style={{ fontSize:11, fontWeight:800, color:"#FF6B6B", marginTop:2 }}>
                           {editMode ? "нажми для правки" : `-${c.points} pts`}
                         </div>
@@ -669,9 +674,9 @@ export default function App() {
                     <button className="btn" onClick={() => setAddingPenalty(true)}
                       style={{ background:"#FF6B6B08", border:"1px dashed #FF6B6B44", borderRadius:18,
                         padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
-                        cursor:"pointer", color:"#FF6B6B66", fontFamily:"inherit" }}>
-                      <div style={{ fontSize:26 }}>⚠️</div>
-                      <div><div style={{ fontSize:13, fontWeight:700 }}>Своё штрафное</div></div>
+                        cursor:"pointer", color:"#FF6B6B66", fontFamily:"inherit", minHeight:72 }}>
+                      <div style={{ fontSize:26, flexShrink:0 }}>⚠️</div>
+                      <div style={{ flex:1, minWidth:0 }}><div style={{ fontSize:13, fontWeight:700 }}>Своё штрафное</div></div>
                     </button>
                   ) : (
                     <div style={{ background:"#FF6B6B0D", border:"1px solid #FF6B6B33",
