@@ -177,6 +177,10 @@ export default function App() {
   const [swipeState, setSwipeState] = useState({});
   const swipeStart = useRef({});
   const [penaltyTarget, setPenaltyTarget] = useState(null);
+  const [quickLogOpen, setQuickLogOpen] = useState(false);
+  const [quickName, setQuickName] = useState("");
+  const [quickPoints, setQuickPoints] = useState(10);
+  const [quickEmoji, setQuickEmoji] = useState("⚡");
 
   const myID = Number(localStorage.getItem("user_id"));
 
@@ -315,6 +319,21 @@ export default function App() {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     return `${day}.${month} в ${time}`;
+  }
+
+  async function doQuickLog() {
+    if (!quickName.trim()) return;
+    setLoading(true);
+    try {
+      await api.quickLog({ name: quickName, emoji: quickEmoji, points: Number(quickPoints) });
+      setFlash({ points: quickPoints, name: quickName });
+      setTimeout(() => setFlash(null), 1800);
+      setQuickLogOpen(false);
+      setQuickName(""); setQuickPoints(10); setQuickEmoji("⚡");
+      await loadFamily();
+      await loadHistory(activeMemberID);
+    } catch(e) { console.error(e); }
+    setLoading(false);
   }
 
   async function doDeleteLog(logID) {
@@ -573,6 +592,21 @@ export default function App() {
                   </button>
                 ))}
 
+                {/* Разовое дело — всегда видимо */}
+                {!editMode && (
+                  <button className="btn" onClick={() => setQuickLogOpen(true)}
+                    style={{ background:"linear-gradient(135deg,#FFE66D11,#1E1E35)",
+                      border:"1px dashed #FFE66D55", borderRadius:18,
+                      padding:"14px 12px", display:"flex", alignItems:"center", gap:10,
+                      cursor:"pointer", color:"#F0EEF6", fontFamily:"inherit" }}>
+                    <div style={{ fontSize:26 }}>⚡</div>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:700 }}>Разовое дело</div>
+                      <div style={{ fontSize:11, color:"#FFE66D99", marginTop:2 }}>начислить очки</div>
+                    </div>
+                  </button>
+                )}
+
                 {editMode && (!addingCustom ? (
                   <button className="btn" onClick={() => setAddingCustom(true)}
                     style={{ background:"#1E1E35", border:"1px dashed #333", borderRadius:18,
@@ -729,6 +763,51 @@ export default function App() {
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Quick log modal */}
+      {quickLogOpen && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)",
+          display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:1000 }}
+          onClick={() => setQuickLogOpen(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:"#1A1A2E", borderRadius:"24px 24px 0 0",
+              padding:24, width:"100%", maxWidth:480 }}>
+            <div style={{ fontSize:16, fontWeight:900, marginBottom:6 }}>⚡ Разовое дело</div>
+            <div style={{ fontSize:13, color:"#666", marginBottom:20 }}>
+              Начислит очки без добавления в список дел
+            </div>
+            <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+              <input value={quickEmoji} onChange={e => setQuickEmoji(e.target.value)}
+                style={{ ...inputStyle, width:56, textAlign:"center", fontSize:22, padding:"10px 8px" }} />
+              <input value={quickName} onChange={e => setQuickName(e.target.value)}
+                placeholder="Что сделал..."
+                style={{ ...inputStyle, flex:1, fontSize:14, padding:"10px 14px" }} />
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:24 }}>
+              <input type="number" value={quickPoints} min={1} max={999}
+                onChange={e => setQuickPoints(e.target.value)}
+                style={{ ...inputStyle, width:80, color:"#FFE66D", fontWeight:800,
+                  fontSize:16, padding:"10px 12px" }} />
+              <span style={{ fontSize:13, color:"#666" }}>очков</span>
+            </div>
+            <button onClick={doQuickLog} disabled={loading || !quickName.trim()}
+              style={{ width:"100%", padding:14,
+                background: (!quickName.trim() || loading) ? "#333" : "#FFE66D",
+                color: (!quickName.trim() || loading) ? "#666" : "#0F0F1A",
+                border:"none", borderRadius:14, fontWeight:900, fontSize:15,
+                cursor: (!quickName.trim() || loading) ? "not-allowed" : "pointer",
+                fontFamily:"inherit", marginBottom:10 }}>
+              {loading ? "..." : "⚡ Начислить очки"}
+            </button>
+            <button onClick={() => setQuickLogOpen(false)}
+              style={{ width:"100%", padding:14, background:"transparent", color:"#555",
+                border:"none", borderRadius:14, fontWeight:700,
+                cursor:"pointer", fontFamily:"inherit" }}>
+              Отмена
+            </button>
+          </div>
         </div>
       )}
 

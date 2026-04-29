@@ -403,6 +403,41 @@ func LogChore(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// POST /api/log/quick — начислить очки без сохранения дела в список
+func QuickLog(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetClaims(r)
+	var body struct {
+		Name   string `json:"name"`
+		Emoji  string `json:"emoji"`
+		Points int    `json:"points"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		respondErr(w, 400, "invalid body")
+		return
+	}
+	if body.Name == "" || body.Points <= 0 {
+		respondErr(w, 400, "name and points required")
+		return
+	}
+	if body.Emoji == "" {
+		body.Emoji = "✨"
+	}
+
+	ctx := context.Background()
+	var logID int
+	db.Pool.QueryRow(ctx,
+		`INSERT INTO chore_logs (user_id, target_user_id, chore_name, chore_emoji, points, is_penalty)
+		 VALUES ($1,$1,$2,$3,$4,false) RETURNING id`,
+		claims.UserID, body.Name, body.Emoji, body.Points,
+	).Scan(&logID)
+
+	respond(w, 201, map[string]any{
+		"log_id": logID,
+		"points": body.Points,
+		"name":   body.Name,
+	})
+}
+
 // DELETE /api/log/{logID}
 func DeleteLog(w http.ResponseWriter, r *http.Request) {
 	claims := auth.GetClaims(r)

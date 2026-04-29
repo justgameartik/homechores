@@ -49,6 +49,7 @@ func main() {
 		r.Get("/api/chores", handlers.GetChores)
 		r.Post("/api/chores", handlers.AddChore)
 		r.Post("/api/log", handlers.LogChore)
+		r.Post("/api/log/quick", handlers.QuickLog)
 		r.Get("/api/history/{userID}", handlers.GetHistory)
 		r.Delete("/api/members/{userID}", handlers.RemoveMember)
 		r.Delete("/api/family/reset", handlers.ResetFamily)
