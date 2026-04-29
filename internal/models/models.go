@@ -26,6 +26,7 @@ type Chore struct {
     Points    int    `json:"points"`
     IsCustom  bool   `json:"is_custom"`
     IsPenalty bool   `json:"is_penalty"`
+    UseCount  int    `json:"use_count"`
 }
 
 type ChoreLog struct {

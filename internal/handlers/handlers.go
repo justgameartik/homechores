@@ -245,9 +245,13 @@ func GetChores(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
 	rows, _ := db.Pool.Query(ctx,
-		`SELECT id, name, emoji, points, is_custom, is_penalty
-		 FROM chores WHERE family_id=$1
-		 ORDER BY is_penalty, is_custom, points DESC`,
+		`SELECT c.id, c.name, c.emoji, c.points, c.is_custom, c.is_penalty,
+		        COUNT(cl.id) AS use_count
+		 FROM chores c
+		 LEFT JOIN chore_logs cl ON cl.chore_id = c.id
+		 WHERE c.family_id = $1
+		 GROUP BY c.id
+		 ORDER BY c.is_penalty, COUNT(cl.id) DESC, c.points DESC`,
 		claims.FamilyID,
 	)
 	defer rows.Close()
@@ -255,7 +259,7 @@ func GetChores(w http.ResponseWriter, r *http.Request) {
 	chores := []models.Chore{}
 	for rows.Next() {
 		var c models.Chore
-		rows.Scan(&c.ID, &c.Name, &c.Emoji, &c.Points, &c.IsCustom, &c.IsPenalty)
+		rows.Scan(&c.ID, &c.Name, &c.Emoji, &c.Points, &c.IsCustom, &c.IsPenalty, &c.UseCount)
 		chores = append(chores, c)
 	}
 	respond(w, 200, chores)
