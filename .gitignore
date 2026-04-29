@@ -2,7 +2,6 @@
 .env
 
 # Go
-server
 *.exe
 *.test
 *.out
