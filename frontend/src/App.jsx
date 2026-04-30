@@ -747,19 +747,19 @@ export default function App() {
                             setSwipeState(s => ({ ...s, [h.id]: 0 }));
                           }
                         }) : undefined}
-                        style={{ display:"flex", alignItems:"center", gap:10,
-                          background:"#1E1E35", borderRadius:12, padding:"10px 14px",
+                        style={{ display:"flex", alignItems:"center", gap:12,
+                          background:"#1E1E35", borderRadius:12, padding:"12px 14px",
                           transform:`translateX(${offset}px)`,
                           transition: offset === 0 ? "transform 0.3s ease" : "none",
                           userSelect:"none" }}>
-                        <div style={{ fontSize:18 }}>{h.chore_emoji}</div>
-                        <div style={{ flex:1, fontSize:14, fontWeight:600 }}>{h.chore_name}</div>
-                        <div style={{ fontSize:13, fontWeight:800,
+                        <div style={{ fontSize:22, flexShrink:0 }}>{h.chore_emoji}</div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:14, fontWeight:700, lineHeight:1.3 }}>{h.chore_name}</div>
+                          <div style={{ fontSize:11, color:"#444", marginTop:3 }}>{formatLogDate(h.logged_at)}</div>
+                        </div>
+                        <div style={{ fontSize:15, fontWeight:900, flexShrink:0,
                           color: h.is_penalty ? "#FF6B6B" : "#FFE66D" }}>
                           {h.is_penalty ? `-${h.points}` : `+${h.points}`}
-                        </div>
-                        <div style={{ fontSize:11, color:"#444" }}>
-                          {formatLogDate(h.logged_at)}
                         </div>
                       </div>
                     </div>
