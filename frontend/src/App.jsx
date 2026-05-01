@@ -943,29 +943,45 @@ export default function App() {
       )}
 
       {/* Bottom Tab Bar */}
-      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
-        width:"100%", maxWidth:480, background:"#12121F",
-        borderTop:"1px solid #1E1E35", display:"flex", zIndex:500,
+      <div style={{ position:"fixed", bottom:0, left:0, right:0,
+        background:"#12121F", borderTop:"1px solid #1E1E35", display:"flex", zIndex:500,
         paddingBottom:"env(safe-area-inset-bottom)" }}>
         {[
-          { id:"home",     label:"Главная",    icon:"🏠" },
-          { id:"stats",    label:"Статистика", icon:"📊" },
-          { id:"settings", label:"Настройки",  icon:"⚙️" },
-        ].map(({ id, label, icon }) => (
-          <button key={id} onClick={() => setNavTab(id)}
-            style={{ flex:1, position:"relative", display:"flex", flexDirection:"column",
-              alignItems:"center", gap:3, padding:"10px 4px 8px",
-              border:"none", background:"transparent", cursor:"pointer",
-              fontFamily:"inherit", color: navTab === id ? "#FFE66D" : "#444",
-              transition:"color 0.2s" }}>
-            {navTab === id && (
-              <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)",
-                width:32, height:2, background:"#FFE66D", borderRadius:"0 0 2px 2px" }} />
-            )}
-            <div style={{ fontSize:22, lineHeight:1 }}>{icon}</div>
-            <div style={{ fontSize:10, fontWeight:700 }}>{label}</div>
-          </button>
-        ))}
+          { id:"home", label:"Главная", icon: (c) => (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V10.5Z" fill={c}/>
+            </svg>
+          )},
+          { id:"stats", label:"Статистика", icon: (c) => (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="12" width="4" height="9" rx="1" fill={c}/>
+              <rect x="10" y="7" width="4" height="14" rx="1" fill={c}/>
+              <rect x="17" y="3" width="4" height="18" rx="1" fill={c}/>
+            </svg>
+          )},
+          { id:"settings", label:"Настройки", icon: (c) => (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" fill={c}/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )},
+        ].map(({ id, label, icon }) => {
+          const color = navTab === id ? "#FFE66D" : "#444";
+          return (
+            <button key={id} onClick={() => setNavTab(id)}
+              style={{ flex:1, position:"relative", display:"flex", flexDirection:"column",
+                alignItems:"center", gap:3, padding:"10px 4px 8px",
+                border:"none", background:"transparent", cursor:"pointer",
+                fontFamily:"inherit", transition:"color 0.2s" }}>
+              {navTab === id && (
+                <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)",
+                  width:32, height:2, background:"#FFE66D", borderRadius:"0 0 2px 2px" }} />
+              )}
+              {icon(color)}
+              <div style={{ fontSize:10, fontWeight:700, color }}>{label}</div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Stub pages */}
