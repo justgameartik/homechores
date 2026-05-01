@@ -225,6 +225,9 @@ export default function App() {
   const swipeStart = useRef({});
   const [penaltyTarget, setPenaltyTarget] = useState(null);
   const [navTab, setNavTab] = useState("home");
+  const [profileAvatar, setProfileAvatar] = useState(null);
+  const [profileColor, setProfileColor] = useState(null);
+  const [editingProfile, setEditingProfile] = useState(false);
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [quickName, setQuickName] = useState("");
   const [quickPoints, setQuickPoints] = useState(10);
@@ -390,6 +393,17 @@ export default function App() {
       await loadFamily();
       await loadHistory(activeMemberID);
     } catch(e) { alert(e.message); }
+  }
+
+  async function doUpdateUser() {
+    const me = members.find(m => m.id === myID);
+    if (!me) return;
+    const avatar = profileAvatar ?? me.avatar;
+    const color  = profileColor  ?? me.color;
+    try {
+      await api.updateUser({ avatar, color });
+      await loadFamily();
+    } catch(e) { console.error(e); }
   }
 
   function logout() {
@@ -959,6 +973,81 @@ export default function App() {
             <div style={{ fontSize:22, fontWeight:900, color:"#F0EEF6", marginBottom:24 }}>
               {family ? family.name : "Семья"}
             </div>
+
+            {/* Profile */}
+            {(() => {
+              const me = members.find(m => m.id === myID);
+              if (!me) return null;
+              const curAvatar = profileAvatar ?? me.avatar;
+              const curColor  = profileColor  ?? me.color;
+              const dirty = curAvatar !== me.avatar || curColor !== me.color;
+              return (
+                <div style={{ marginBottom:20 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
+                    textTransform:"uppercase", marginBottom:8 }}>Мой профиль</div>
+                  <div style={{ background:"#1E1E35", borderRadius:16, padding:"16px 18px" }}>
+                    {/* Preview */}
+                    <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:16 }}>
+                      <div style={{ fontSize:44, lineHeight:1,
+                        background: curColor+"22", borderRadius:16, padding:10,
+                        border: `2px solid ${curColor}` }}>{curAvatar}</div>
+                      <div>
+                        <div style={{ fontWeight:800, fontSize:15 }}>{me.name}</div>
+                        <div style={{ fontSize:12, color:curColor, fontWeight:700 }}>{me.points} pts</div>
+                      </div>
+                    </div>
+                    {!editingProfile ? (
+                      <button className="btn" onClick={() => setEditingProfile(true)}
+                        style={{ width:"100%", padding:"9px 0", background:"#12121F",
+                          border:"1px solid #2a2a3e", borderRadius:12, fontWeight:700,
+                          fontSize:13, color:"#888", cursor:"pointer", fontFamily:"inherit" }}>
+                        Изменить
+                      </button>
+                    ) : (
+                      <>
+                        {/* Avatar picker */}
+                        <div style={{ fontSize:11, fontWeight:700, color:"#555", marginBottom:8 }}>Аватар</div>
+                        <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:14 }}>
+                          {AVATARS.map(a => (
+                            <div key={a} onClick={() => setProfileAvatar(a)}
+                              style={{ fontSize:26, padding:6, borderRadius:10, cursor:"pointer",
+                                background: curAvatar===a ? curColor+"33" : "#12121F",
+                                border: curAvatar===a ? `2px solid ${curColor}` : "2px solid transparent",
+                                transition:"all 0.15s" }}>{a}</div>
+                          ))}
+                        </div>
+                        {/* Color picker */}
+                        <div style={{ fontSize:11, fontWeight:700, color:"#555", marginBottom:8 }}>Цвет</div>
+                        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
+                          {COLORS.map(c => (
+                            <div key={c} onClick={() => setProfileColor(c)}
+                              style={{ width:28, height:28, borderRadius:"50%", background:c,
+                                cursor:"pointer", border: curColor===c ? "3px solid #F0EEF6" : "3px solid transparent",
+                                boxShadow: curColor===c ? `0 0 0 2px ${c}` : "none",
+                                transition:"all 0.15s" }} />
+                          ))}
+                        </div>
+                        <div style={{ display:"flex", gap:8 }}>
+                          <button className="btn" onClick={() => { setEditingProfile(false); setProfileAvatar(null); setProfileColor(null); }}
+                            style={{ flex:1, padding:"9px 0", background:"transparent",
+                              border:"1px solid #2a2a3e", borderRadius:12, fontWeight:700,
+                              fontSize:13, color:"#555", cursor:"pointer", fontFamily:"inherit" }}>
+                            Отмена
+                          </button>
+                          <button className="btn" onClick={async () => { await doUpdateUser(); setProfileAvatar(null); setProfileColor(null); setEditingProfile(false); }}
+                            style={{ flex:2, padding:"9px 0", background: dirty ? "#FFE66D" : "#2a2a3e",
+                              border:"none", borderRadius:12, fontWeight:900,
+                              fontSize:13, color: dirty ? "#0F0F1A" : "#555",
+                              cursor: dirty ? "pointer" : "default", fontFamily:"inherit" }}>
+                            Сохранить
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Invite code */}
             {family && (

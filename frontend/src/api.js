@@ -33,4 +33,5 @@ export const api = {
   updateChore: (choreID, body) => req('PUT', `/chores/${choreID}`, body),
   deleteChore: (choreID) => req('DELETE', `/chores/${choreID}`),
   deleteLog: (logID) => req('DELETE', `/log/${logID}`),
+  updateUser: (body) => req('PATCH', '/user', body),
 }

@@ -407,6 +407,29 @@ func LogChore(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// PATCH /api/user — обновить аватар и цвет текущего пользователя
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetClaims(r)
+	var body struct {
+		Avatar string `json:"avatar"`
+		Color  string `json:"color"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		respondErr(w, 400, "invalid body")
+		return
+	}
+	ctx := context.Background()
+	_, err := db.Pool.Exec(ctx,
+		`UPDATE users SET avatar=$1, color=$2 WHERE id=$3`,
+		body.Avatar, body.Color, claims.UserID,
+	)
+	if err != nil {
+		respondErr(w, 500, "db error")
+		return
+	}
+	respond(w, 200, map[string]any{"ok": true})
+}
+
 // POST /api/log/quick — начислить очки без сохранения дела в список
 func QuickLog(w http.ResponseWriter, r *http.Request) {
 	claims := auth.GetClaims(r)
