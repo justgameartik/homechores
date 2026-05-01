@@ -457,69 +457,8 @@ export default function App() {
                   fill={editMode?"#fff":"#888"}/>
               </svg>
             </button>
-            <button className="btn" onClick={() => setShowInvite(v => !v)}
-              style={{ background:showInvite?"#4ECDC4":"#1E1E35",
-                border:"none", borderRadius:12, padding:"8px 10px",
-                cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
-                  stroke={showInvite?"#0F0F1A":"#888"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
-                  stroke={showInvite?"#0F0F1A":"#888"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            {isOwner && (
-              <button className="btn" onClick={doResetFamily}
-                style={{ background:"#1E1E35", border:"none", borderRadius:12, padding:"8px 10px",
-                  cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24L13 11h7V4l-2.35 2.35z"
-                    fill="#FF6B6B"/>
-                </svg>
-              </button>
-            )}
-            <button className="btn" onClick={logout}
-              style={{ background:"#1E1E35", border:"none", borderRadius:12, padding:"8px 10px",
-                cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"
-                  fill="#555"/>
-              </svg>
-            </button>
           </div>
         </div>
-
-        {/* Invite panel */}
-        {showInvite && family && (
-          <div style={{ background:"#1E1E35", borderRadius:16, padding:"14px 16px", marginBottom:12 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:"#666", marginBottom:6 }}>ИНВАЙТ-КОД ДЛЯ ВСТУПЛЕНИЯ</div>
-            <div className="btn" onClick={() => {
-                try {
-                  if (navigator.clipboard) {
-                    navigator.clipboard.writeText(family.invite_code);
-                  } else {
-                    const el = document.createElement("textarea");
-                    el.value = family.invite_code;
-                    el.style.position = "fixed";
-                    el.style.opacity = "0";
-                    document.body.appendChild(el);
-                    el.focus();
-                    el.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(el);
-                  }
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                } catch(e) { console.error("copy failed", e); }
-              }}
-              style={{ fontSize:28, fontWeight:900, letterSpacing:4, color:"#4ECDC4", cursor:"pointer", display:"inline-block" }}>
-              {family.invite_code}
-            </div>
-            <div style={{ fontSize:11, color: copied ? "#4ECDC4" : "#555", marginTop:4, transition:"color 0.2s" }}>
-              {copied ? "✓ Скопировано!" : "Нажми на код — скопируется в буфер"}
-            </div>
-          </div>
-        )}
 
         {/* Member tabs */}
         <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:4 }}>
@@ -1003,21 +942,121 @@ export default function App() {
 
       {/* Stub pages */}
       {navTab === "stats" && (
-        <div style={{ position:"fixed", inset:0, bottom:72, background:"#0F0F1A", zIndex:400,
+        <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
           display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-          gap:12, fontFamily:"'Nunito',system-ui,sans-serif" }}>
+          gap:12, fontFamily:"'Nunito',system-ui,sans-serif", paddingBottom:72 }}>
           <div style={{ fontSize:56 }}>📊</div>
           <div style={{ fontSize:20, fontWeight:900, color:"#F0EEF6" }}>Статистика</div>
           <div style={{ fontSize:13, color:"#444" }}>Скоро здесь будет что-то интересное</div>
         </div>
       )}
       {navTab === "settings" && (
-        <div style={{ position:"fixed", inset:0, bottom:72, background:"#0F0F1A", zIndex:400,
-          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-          gap:12, fontFamily:"'Nunito',system-ui,sans-serif" }}>
-          <div style={{ fontSize:56 }}>⚙️</div>
-          <div style={{ fontSize:20, fontWeight:900, color:"#F0EEF6" }}>Настройки</div>
-          <div style={{ fontSize:13, color:"#444" }}>Скоро здесь будет что-то интересное</div>
+        <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
+          overflowY:"auto", fontFamily:"'Nunito',system-ui,sans-serif", paddingBottom:72 }}>
+          <div style={{ padding:"24px 20px 32px" }}>
+            <div style={{ fontSize:11, fontWeight:700, letterSpacing:3, color:"#666",
+              textTransform:"uppercase", marginBottom:4 }}>Настройки</div>
+            <div style={{ fontSize:22, fontWeight:900, color:"#F0EEF6", marginBottom:24 }}>
+              {family ? family.name : "Семья"}
+            </div>
+
+            {/* Invite code */}
+            {family && (
+              <div style={{ marginBottom:12 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
+                  textTransform:"uppercase", marginBottom:8 }}>Инвайт-код</div>
+                <div style={{ background:"#1E1E35", borderRadius:16, padding:"16px 18px" }}>
+                  <div style={{ fontSize:11, color:"#555", marginBottom:6 }}>
+                    Поделись кодом, чтобы кто-то вступил в семью
+                  </div>
+                  <div className="btn" onClick={() => {
+                      try {
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(family.invite_code);
+                        } else {
+                          const el = document.createElement("textarea");
+                          el.value = family.invite_code;
+                          el.style.position = "fixed"; el.style.opacity = "0";
+                          document.body.appendChild(el);
+                          el.focus(); el.select();
+                          document.execCommand("copy");
+                          document.body.removeChild(el);
+                        }
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch(e) { console.error("copy failed", e); }
+                    }}
+                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                      cursor:"pointer" }}>
+                    <div style={{ fontSize:30, fontWeight:900, letterSpacing:5, color:"#4ECDC4" }}>
+                      {family.invite_code}
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:6,
+                      color: copied ? "#4ECDC4" : "#555", fontSize:12, fontWeight:700,
+                      transition:"color 0.2s" }}>
+                      {copied ? (
+                        <>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17l-5-5" stroke="#4ECDC4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          Скопировано
+                        </>
+                      ) : (
+                        <>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <rect x="9" y="9" width="13" height="13" rx="2" stroke="#555" strokeWidth="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="#555" strokeWidth="2"/>
+                          </svg>
+                          Скопировать
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Reset */}
+            {isOwner && (
+              <div style={{ marginBottom:12 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
+                  textTransform:"uppercase", marginBottom:8 }}>Опасная зона</div>
+                <button className="btn" onClick={doResetFamily}
+                  style={{ width:"100%", background:"#FF6B6B11", border:"1px solid #FF6B6B33",
+                    borderRadius:16, padding:"16px 18px", display:"flex", alignItems:"center",
+                    gap:14, cursor:"pointer", fontFamily:"inherit", color:"#F0EEF6", textAlign:"left" }}>
+                  <div style={{ background:"#FF6B6B22", borderRadius:10, padding:8, flexShrink:0 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24L13 11h7V4l-2.35 2.35z"
+                        fill="#FF6B6B"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:14, fontWeight:800, color:"#FF6B6B" }}>Обнулить очки</div>
+                    <div style={{ fontSize:11, color:"#666", marginTop:2 }}>Сбросить очки всех участников</div>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* Logout */}
+            <div style={{ marginBottom:12 }}>
+              <button className="btn" onClick={logout}
+                style={{ width:"100%", background:"#1E1E35", border:"1px solid #2a2a3e",
+                  borderRadius:16, padding:"16px 18px", display:"flex", alignItems:"center",
+                  gap:14, cursor:"pointer", fontFamily:"inherit", color:"#F0EEF6", textAlign:"left" }}>
+                <div style={{ background:"#2a2a3e", borderRadius:10, padding:8, flexShrink:0 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z" fill="#888"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize:14, fontWeight:800 }}>Выйти</div>
+                  <div style={{ fontSize:11, color:"#555", marginTop:2 }}>Вернуться на экран входа</div>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
