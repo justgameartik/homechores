@@ -145,6 +145,53 @@ function AuthScreen({ onAuth }) {
           </button>
         </div>
       </div>
+
+      {/* Bottom Tab Bar */}
+      <div style={{ position:"fixed", bottom:0, left:0, right:0,
+        background:"#12121F", borderTop:"1px solid #1E1E35", display:"flex", zIndex:500,
+        paddingBottom:"env(safe-area-inset-bottom)" }}>
+        {[
+          { id:"home",  label:"Главная",    icon:"🏠" },
+          { id:"stats", label:"Статистика", icon:"📊" },
+          { id:"settings", label:"Настройки", icon:"⚙️" },
+        ].map(({ id, label, icon }) => (
+          <button key={id} onClick={() => setNavTab(id)}
+            className="btn"
+            style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center",
+              gap:3, padding:"10px 4px 8px", border:"none", background:"transparent",
+              cursor:"pointer", fontFamily:"inherit",
+              color: navTab === id ? "#FFE66D" : "#444",
+              transition:"color 0.2s" }}>
+            <div style={{ fontSize:22, lineHeight:1 }}>{icon}</div>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5 }}>{label}</div>
+            {navTab === id && (
+              <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)",
+                width:32, height:2, background:"#FFE66D", borderRadius:2 }} />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Stub pages */}
+      {navTab === "stats" && (
+        <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+          gap:12, paddingBottom:72, fontFamily:"inherit" }}>
+          <div style={{ fontSize:56 }}>📊</div>
+          <div style={{ fontSize:20, fontWeight:900, color:"#F0EEF6" }}>Статистика</div>
+          <div style={{ fontSize:13, color:"#444" }}>Скоро здесь будет что-то интересное</div>
+        </div>
+      )}
+      {navTab === "settings" && (
+        <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+          gap:12, paddingBottom:72, fontFamily:"inherit" }}>
+          <div style={{ fontSize:56 }}>⚙️</div>
+          <div style={{ fontSize:20, fontWeight:900, color:"#F0EEF6" }}>Настройки</div>
+          <div style={{ fontSize:13, color:"#444" }}>Скоро здесь будет что-то интересное</div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -177,6 +224,7 @@ export default function App() {
   const [swipeState, setSwipeState] = useState({});
   const swipeStart = useRef({});
   const [penaltyTarget, setPenaltyTarget] = useState(null);
+  const [navTab, setNavTab] = useState("home");
   const [quickLogOpen, setQuickLogOpen] = useState(false);
   const [quickName, setQuickName] = useState("");
   const [quickPoints, setQuickPoints] = useState(10);
@@ -358,7 +406,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight:"100vh", background:"#0F0F1A", fontFamily:"'Nunito',system-ui,sans-serif",
-      color:"#F0EEF6", maxWidth:480, margin:"0 auto", position:"relative" }}>
+      color:"#F0EEF6", maxWidth:480, margin:"0 auto", position:"relative", paddingBottom:72 }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
@@ -893,6 +941,53 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Bottom Tab Bar */}
+      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
+        width:"100%", maxWidth:480, background:"#12121F",
+        borderTop:"1px solid #1E1E35", display:"flex", zIndex:500,
+        paddingBottom:"env(safe-area-inset-bottom)" }}>
+        {[
+          { id:"home",     label:"Главная",    icon:"🏠" },
+          { id:"stats",    label:"Статистика", icon:"📊" },
+          { id:"settings", label:"Настройки",  icon:"⚙️" },
+        ].map(({ id, label, icon }) => (
+          <button key={id} onClick={() => setNavTab(id)}
+            style={{ flex:1, position:"relative", display:"flex", flexDirection:"column",
+              alignItems:"center", gap:3, padding:"10px 4px 8px",
+              border:"none", background:"transparent", cursor:"pointer",
+              fontFamily:"inherit", color: navTab === id ? "#FFE66D" : "#444",
+              transition:"color 0.2s" }}>
+            {navTab === id && (
+              <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)",
+                width:32, height:2, background:"#FFE66D", borderRadius:"0 0 2px 2px" }} />
+            )}
+            <div style={{ fontSize:22, lineHeight:1 }}>{icon}</div>
+            <div style={{ fontSize:10, fontWeight:700 }}>{label}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Stub pages */}
+      {navTab === "stats" && (
+        <div style={{ position:"fixed", inset:0, bottom:72, background:"#0F0F1A", zIndex:400,
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+          gap:12, fontFamily:"'Nunito',system-ui,sans-serif" }}>
+          <div style={{ fontSize:56 }}>📊</div>
+          <div style={{ fontSize:20, fontWeight:900, color:"#F0EEF6" }}>Статистика</div>
+          <div style={{ fontSize:13, color:"#444" }}>Скоро здесь будет что-то интересное</div>
+        </div>
+      )}
+      {navTab === "settings" && (
+        <div style={{ position:"fixed", inset:0, bottom:72, background:"#0F0F1A", zIndex:400,
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+          gap:12, fontFamily:"'Nunito',system-ui,sans-serif" }}>
+          <div style={{ fontSize:56 }}>⚙️</div>
+          <div style={{ fontSize:20, fontWeight:900, color:"#F0EEF6" }}>Настройки</div>
+          <div style={{ fontSize:13, color:"#444" }}>Скоро здесь будет что-то интересное</div>
+        </div>
+      )}
+
     </div>
   );
 }
