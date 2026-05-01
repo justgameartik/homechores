@@ -2,12 +2,39 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Домашний Рейтинг</title>
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Домашний" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#0F0F1A" />
+
+    <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>" />
+
+    <style>
+      body { background: #0F0F1A; margin: 0; font-family: system-ui, sans-serif; }
+      #error-box { display:none; color:#FF6B6B; padding:20px; font-size:13px; white-space:pre-wrap; word-break:break-all; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="error-box"></div>
+    <script>
+      window.onerror = function(msg, src, line, col, err) {
+        var box = document.getElementById('error-box');
+        box.style.display = 'block';
+        box.textContent = 'JS ERROR:\n' + msg + '\n' + src + ':' + line + '\n' + (err && err.stack || '');
+      };
+      window.onunhandledrejection = function(e) {
+        var box = document.getElementById('error-box');
+        box.style.display = 'block';
+        box.textContent = (box.textContent || '') + '\nPROMISE:\n' + (e.reason && (e.reason.stack || e.reason.message || e.reason) || e);
+      };
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

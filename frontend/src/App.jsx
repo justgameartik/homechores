@@ -12,6 +12,13 @@ const RANKS = [
 const AVATARS = ["🧔","👩","👦","👧","👴","👵","🧑","👨‍💼","👩‍💼","🧑‍🍳","🦸","🧙"];
 const COLORS  = ["#FF6B6B","#4ECDC4","#FFE66D","#A8E6CF","#FF8B94","#B5EAD7","#C7CEEA","#FFDAC1"];
 
+// Safe localStorage wrapper for iOS standalone mode
+const ls = {
+  get: (k) => { try { return localStorage.getItem(k) } catch { return null } },
+  set: (k, v) => { try { localStorage.setItem(k, v) } catch {} },
+  clear: () => { try { ls.clear() } catch {} },
+}
+
 function getRank(pts) {
   return [...RANKS].reverse().find(r => pts >= r.min) || RANKS[0];
 }
@@ -48,9 +55,9 @@ function AuthScreen({ onAuth }) {
       else if (mode === "join") res = await api.join(form);
       else res = await api.login({ name: form.name, password: form.password, family_login: form.family_login });
 
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("user_id", String(res.user_id));
-      localStorage.setItem("family_id", String(res.family_id));
+      ls.set("token", res.token);
+      ls.set("user_id", String(res.user_id));
+      ls.set("family_id", String(res.family_id));
       onAuth();
     } catch(e) {
       setError(e.message);
@@ -146,59 +153,13 @@ function AuthScreen({ onAuth }) {
         </div>
       </div>
 
-      {/* Bottom Tab Bar */}
-      <div style={{ position:"fixed", bottom:0, left:0, right:0,
-        background:"#12121F", borderTop:"1px solid #1E1E35", display:"flex", zIndex:500,
-        paddingBottom:"env(safe-area-inset-bottom)" }}>
-        {[
-          { id:"home",  label:"Главная",    icon:"🏠" },
-          { id:"stats", label:"Статистика", icon:"📊" },
-          { id:"settings", label:"Настройки", icon:"⚙️" },
-        ].map(({ id, label, icon }) => (
-          <button key={id} onClick={() => setNavTab(id)}
-            className="btn"
-            style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center",
-              gap:3, padding:"10px 4px 8px", border:"none", background:"transparent",
-              cursor:"pointer", fontFamily:"inherit",
-              color: navTab === id ? "#FFE66D" : "#444",
-              transition:"color 0.2s" }}>
-            <div style={{ fontSize:22, lineHeight:1 }}>{icon}</div>
-            <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5 }}>{label}</div>
-            {navTab === id && (
-              <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)",
-                width:32, height:2, background:"#FFE66D", borderRadius:2 }} />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Stub pages */}
-      {navTab === "stats" && (
-        <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
-          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-          gap:12, paddingBottom:72, fontFamily:"inherit" }}>
-          <div style={{ fontSize:56 }}>📊</div>
-          <div style={{ fontSize:20, fontWeight:900, color:"#F0EEF6" }}>Статистика</div>
-          <div style={{ fontSize:13, color:"#444" }}>Скоро здесь будет что-то интересное</div>
-        </div>
-      )}
-      {navTab === "settings" && (
-        <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
-          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-          gap:12, paddingBottom:72, fontFamily:"inherit" }}>
-          <div style={{ fontSize:56 }}>⚙️</div>
-          <div style={{ fontSize:20, fontWeight:900, color:"#F0EEF6" }}>Настройки</div>
-          <div style={{ fontSize:13, color:"#444" }}>Скоро здесь будет что-то интересное</div>
-        </div>
-      )}
-
     </div>
   );
 }
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [authed, setAuthed] = useState(!!localStorage.getItem("token"));
+  const [authed, setAuthed] = useState(!!ls.get("token"));
   const [family, setFamily] = useState(null);
   const [members, setMembers] = useState([]);
   const [chores, setChores] = useState([]);
@@ -233,7 +194,7 @@ export default function App() {
   const [quickPoints, setQuickPoints] = useState(10);
   const [quickEmoji, setQuickEmoji] = useState("⚡");
 
-  const myID = Number(localStorage.getItem("user_id"));
+  const myID = Number(ls.get("user_id"));
 
   const loadFamily = useCallback(async () => {
     try {
@@ -244,7 +205,7 @@ export default function App() {
       setIsOwner(sortedByID[0]?.id === myID);
       if (!activeMemberID) setActiveMemberID(myID || data.members[0]?.id);
     } catch(e) {
-      if (e.message === "unauthorized") { localStorage.clear(); setAuthed(false); }
+      if (e.message === "unauthorized") { ls.clear(); setAuthed(false); }
     }
   }, [activeMemberID, myID]);
 
@@ -407,7 +368,7 @@ export default function App() {
   }
 
   function logout() {
-    localStorage.clear();
+    ls.clear();
     setAuthed(false);
   }
 
@@ -428,6 +389,8 @@ export default function App() {
         @keyframes pop{0%{transform:scale(0.5) translateY(0);opacity:1}80%{transform:scale(1.2) translateY(-60px);opacity:1}100%{transform:scale(1) translateY(-80px);opacity:0}}
         .btn{transition:transform 0.1s,filter 0.15s;cursor:pointer} .btn:active{transform:scale(0.95)} .btn:hover{filter:brightness(1.1)}
         input{color:#F0EEF6}
+        body{background:#0F0F1A}
+        .header-safe{padding-top:max(20px, env(safe-area-inset-top))}
       `}</style>
 
       {/* Flash */}
@@ -441,7 +404,7 @@ export default function App() {
       )}
 
       {/* Header */}
-      <div style={{ padding:"20px 20px 0", background:"linear-gradient(180deg,#1A1A2E 0%,transparent 100%)" }}>
+      <div className="header-safe" style={{ padding:"0 20px 0", background:"linear-gradient(180deg,#1A1A2E 0%,transparent 100%)" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
           <div>
             <div style={{ fontSize:11, fontWeight:700, letterSpacing:3, color:"#666", textTransform:"uppercase" }}>Семейный</div>
