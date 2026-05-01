@@ -965,6 +965,56 @@ export default function App() {
               {family ? family.name : "Семья"}
             </div>
 
+            {/* Invite code */}
+            {family && (
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
+                  textTransform:"uppercase", marginBottom:8 }}>Инвайт-код</div>
+                <div style={{ background:"#1E1E35", borderRadius:16, padding:"16px 18px" }}>
+                  <div style={{ fontSize:11, color:"#555", marginBottom:6 }}>
+                    Поделись кодом, чтобы кто-то вступил в семью
+                  </div>
+                  <div className="btn" onClick={() => {
+                      try {
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(family.invite_code);
+                        } else {
+                          const el = document.createElement("textarea");
+                          el.value = family.invite_code;
+                          el.style.position = "fixed"; el.style.opacity = "0";
+                          document.body.appendChild(el);
+                          el.focus(); el.select();
+                          document.execCommand("copy");
+                          document.body.removeChild(el);
+                        }
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch(e) { console.error("copy failed", e); }
+                    }}
+                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                      cursor:"pointer" }}>
+                    <div style={{ fontSize:30, fontWeight:900, letterSpacing:5, color:"#4ECDC4" }}>
+                      {family.invite_code}
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:6,
+                      color: copied ? "#4ECDC4" : "#555", fontSize:12, fontWeight:700,
+                      transition:"color 0.2s" }}>
+                      {copied ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17l-5-5" stroke="#4ECDC4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <rect x="9" y="9" width="13" height="13" rx="2" stroke="#555" strokeWidth="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="#555" strokeWidth="2"/>
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Profile */}
             {(() => {
               const me = members.find(m => m.id === myID);
@@ -1105,62 +1155,6 @@ export default function App() {
                 )}
               </div>
             </div>
-
-            {/* Invite code */}
-            {family && (
-              <div style={{ marginBottom:12 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
-                  textTransform:"uppercase", marginBottom:8 }}>Инвайт-код</div>
-                <div style={{ background:"#1E1E35", borderRadius:16, padding:"16px 18px" }}>
-                  <div style={{ fontSize:11, color:"#555", marginBottom:6 }}>
-                    Поделись кодом, чтобы кто-то вступил в семью
-                  </div>
-                  <div className="btn" onClick={() => {
-                      try {
-                        if (navigator.clipboard) {
-                          navigator.clipboard.writeText(family.invite_code);
-                        } else {
-                          const el = document.createElement("textarea");
-                          el.value = family.invite_code;
-                          el.style.position = "fixed"; el.style.opacity = "0";
-                          document.body.appendChild(el);
-                          el.focus(); el.select();
-                          document.execCommand("copy");
-                          document.body.removeChild(el);
-                        }
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      } catch(e) { console.error("copy failed", e); }
-                    }}
-                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                      cursor:"pointer" }}>
-                    <div style={{ fontSize:30, fontWeight:900, letterSpacing:5, color:"#4ECDC4" }}>
-                      {family.invite_code}
-                    </div>
-                    <div style={{ display:"flex", alignItems:"center", gap:6,
-                      color: copied ? "#4ECDC4" : "#555", fontSize:12, fontWeight:700,
-                      transition:"color 0.2s" }}>
-                      {copied ? (
-                        <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path d="M20 6L9 17l-5-5" stroke="#4ECDC4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          Скопировано
-                        </>
-                      ) : (
-                        <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <rect x="9" y="9" width="13" height="13" rx="2" stroke="#555" strokeWidth="2"/>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="#555" strokeWidth="2"/>
-                          </svg>
-                          Скопировать
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Reset */}
             {isOwner && (
