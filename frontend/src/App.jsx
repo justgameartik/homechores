@@ -439,36 +439,52 @@ export default function App() {
           <div style={{ display:"flex", gap:8 }}>
             <button className="btn" onClick={() => setView(view==="leaderboard"?"home":"leaderboard")}
               style={{ background:view==="leaderboard"?"#FFE66D":"#1E1E35",
-                color:view==="leaderboard"?"#0F0F1A":"#F0EEF6",
-                border:"none", borderRadius:12, padding:"8px 12px",
-                fontWeight:800, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
-              🏆
+                border:"none", borderRadius:12, padding:"8px 10px",
+                cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M8 21H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h4v7zM15 21H9V10a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v11zM21 21h-4v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4z"
+                  fill={view==="leaderboard"?"#0F0F1A":"#F0EEF6"}/>
+                <path d="M12 2l1.5 4H17l-3 2 1 4-3-2-3 2 1-4-3-2h3.5L12 2z"
+                  fill={view==="leaderboard"?"#0F0F1A":"#FFE66D"}/>
+              </svg>
             </button>
             <button className="btn" onClick={() => setEditMode(e => !e)}
               style={{ background:editMode?"#FF6B6B":"#1E1E35",
-                color:editMode?"#fff":"#888",
-                border:"none", borderRadius:12, padding:"8px 12px",
-                fontWeight:800, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
-              ✏️
+                border:"none", borderRadius:12, padding:"8px 10px",
+                cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                  fill={editMode?"#fff":"#888"}/>
+              </svg>
             </button>
             <button className="btn" onClick={() => setShowInvite(v => !v)}
               style={{ background:showInvite?"#4ECDC4":"#1E1E35",
-                color:showInvite?"#0F0F1A":"#888",
-                border:"none", borderRadius:12, padding:"8px 12px",
-                fontWeight:800, fontSize:14, cursor:"pointer", fontFamily:"inherit" }}>
-              🔗
+                border:"none", borderRadius:12, padding:"8px 10px",
+                cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+                  stroke={showInvite?"#0F0F1A":"#888"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+                  stroke={showInvite?"#0F0F1A":"#888"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
             {isOwner && (
               <button className="btn" onClick={doResetFamily}
-                style={{ background:"#1E1E35", border:"none", borderRadius:12, padding:"8px 12px",
-                  color:"#FF6B6B", fontWeight:800, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
-                🔄
+                style={{ background:"#1E1E35", border:"none", borderRadius:12, padding:"8px 10px",
+                  cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.76-4.24L13 11h7V4l-2.35 2.35z"
+                    fill="#FF6B6B"/>
+                </svg>
               </button>
             )}
             <button className="btn" onClick={logout}
-              style={{ background:"#1E1E35", border:"none", borderRadius:12, padding:"8px 12px",
-                color:"#555", fontWeight:800, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
-              ⏏
+              style={{ background:"#1E1E35", border:"none", borderRadius:12, padding:"8px 10px",
+                cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"
+                  fill="#555"/>
+              </svg>
             </button>
           </div>
         </div>
@@ -942,6 +958,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Bottom Tab Bar */}
       {/* Bottom Tab Bar */}
       <div style={{ position:"fixed", bottom:0, left:0, right:0,
         background:"#12121F", borderTop:"1px solid #1E1E35", display:"flex", zIndex:500,
