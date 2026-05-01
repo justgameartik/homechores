@@ -193,6 +193,10 @@ export default function App() {
   const [quickName, setQuickName] = useState("");
   const [quickPoints, setQuickPoints] = useState(10);
   const [quickEmoji, setQuickEmoji] = useState("⚡");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [pwForm, setPwForm] = useState({ old: "", new1: "", new2: "" });
+  const [pwError, setPwError] = useState("");
+  const [pwSuccess, setPwSuccess] = useState(false);
 
   const myID = Number(ls.get("user_id"));
 
@@ -365,6 +369,30 @@ export default function App() {
       await api.updateUser({ avatar, color });
       await loadFamily();
     } catch(e) { console.error(e); }
+  }
+
+  async function doChangePassword() {
+    setPwError("");
+    if (!pwForm.old || !pwForm.new1 || !pwForm.new2) {
+      setPwError("Заполни все поля");
+      return;
+    }
+    if (pwForm.new1 !== pwForm.new2) {
+      setPwError("Новые пароли не совпадают");
+      return;
+    }
+    if (pwForm.new1.length < 4) {
+      setPwError("Минимум 4 символа");
+      return;
+    }
+    try {
+      await api.changePassword({ old_password: pwForm.old, new_password: pwForm.new1 });
+      setPwSuccess(true);
+      setPwForm({ old: "", new1: "", new2: "" });
+      setTimeout(() => { setPwSuccess(false); setChangingPassword(false); }, 2000);
+    } catch(e) {
+      setPwError(e.message === "current password is incorrect" ? "Неверный текущий пароль" : e.message);
+    }
   }
 
   function logout() {
@@ -1011,6 +1039,72 @@ export default function App() {
                 </div>
               );
             })()}
+
+            {/* Change password */}
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
+                textTransform:"uppercase", marginBottom:8 }}>Сменить пароль</div>
+              <div style={{ background:"#1E1E35", borderRadius:16, padding:"16px 18px" }}>
+                {!changingPassword ? (
+                  <button className="btn" onClick={() => { setChangingPassword(true); setPwError(""); setPwSuccess(false); }}
+                    style={{ width:"100%", padding:"9px 0", background:"#12121F",
+                      border:"1px solid #2a2a3e", borderRadius:12, fontWeight:700,
+                      fontSize:13, color:"#888", cursor:"pointer", fontFamily:"inherit" }}>
+                    Изменить пароль
+                  </button>
+                ) : pwSuccess ? (
+                  <div style={{ textAlign:"center", padding:"8px 0", color:"#4ECDC4", fontWeight:800, fontSize:14 }}>
+                    ✓ Пароль успешно изменён
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:14 }}>
+                      <input
+                        type="password"
+                        placeholder="Текущий пароль"
+                        value={pwForm.old}
+                        onChange={e => setPwForm(f => ({ ...f, old: e.target.value }))}
+                        style={{ ...inputStyle, fontSize:14, padding:"10px 14px" }}
+                      />
+                      <input
+                        type="password"
+                        placeholder="Новый пароль"
+                        value={pwForm.new1}
+                        onChange={e => setPwForm(f => ({ ...f, new1: e.target.value }))}
+                        style={{ ...inputStyle, fontSize:14, padding:"10px 14px" }}
+                      />
+                      <input
+                        type="password"
+                        placeholder="Повтори новый пароль"
+                        value={pwForm.new2}
+                        onChange={e => setPwForm(f => ({ ...f, new2: e.target.value }))}
+                        style={{ ...inputStyle, fontSize:14, padding:"10px 14px" }}
+                      />
+                    </div>
+                    {pwError && (
+                      <div style={{ color:"#FF6B6B", fontSize:12, fontWeight:700, marginBottom:10 }}>
+                        {pwError}
+                      </div>
+                    )}
+                    <div style={{ display:"flex", gap:8 }}>
+                      <button className="btn"
+                        onClick={() => { setChangingPassword(false); setPwForm({ old:"", new1:"", new2:"" }); setPwError(""); }}
+                        style={{ flex:1, padding:"9px 0", background:"transparent",
+                          border:"1px solid #2a2a3e", borderRadius:12, fontWeight:700,
+                          fontSize:13, color:"#555", cursor:"pointer", fontFamily:"inherit" }}>
+                        Отмена
+                      </button>
+                      <button className="btn" onClick={doChangePassword}
+                        style={{ flex:2, padding:"9px 0", background:"#FFE66D",
+                          border:"none", borderRadius:12, fontWeight:900,
+                          fontSize:13, color:"#0F0F1A", cursor:"pointer", fontFamily:"inherit" }}>
+                        Сохранить
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
 
             {/* Invite code */}
             {family && (

@@ -57,6 +57,7 @@ func main() {
 		r.Delete("/api/chores/{choreID}", handlers.DeleteChore)
 		r.Delete("/api/log/{logID}", handlers.DeleteLog)
 		r.Patch("/api/user", handlers.UpdateUser)
+		r.Patch("/api/user/password", handlers.ChangePassword)
 	})
 
 	// Serve React frontend (built static files)

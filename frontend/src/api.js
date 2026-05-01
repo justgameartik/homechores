@@ -34,4 +34,5 @@ export const api = {
   deleteChore: (choreID) => req('DELETE', `/chores/${choreID}`),
   deleteLog: (logID) => req('DELETE', `/log/${logID}`),
   updateUser: (body) => req('PATCH', '/user', body),
+  changePassword: (body) => req('PATCH', '/user/password', body),
 }

@@ -571,6 +571,58 @@ func ResetFamily(w http.ResponseWriter, r *http.Request) {
 	respond(w, 200, map[string]string{"status": "reset"})
 }
 
+// PATCH /api/user/password — смена пароля текущего пользователя
+func ChangePassword(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetClaims(r)
+	var body struct {
+		OldPassword string `json:"old_password"`
+		NewPassword string `json:"new_password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		respondErr(w, 400, "invalid body")
+		return
+	}
+	if body.OldPassword == "" || body.NewPassword == "" {
+		respondErr(w, 400, "old_password and new_password required")
+		return
+	}
+	if len(body.NewPassword) < 4 {
+		respondErr(w, 400, "new password must be at least 4 characters")
+		return
+	}
+
+	ctx := context.Background()
+	var currentHash string
+	err := db.Pool.QueryRow(ctx,
+		`SELECT password_hash FROM users WHERE id=$1`, claims.UserID,
+	).Scan(&currentHash)
+	if err != nil {
+		respondErr(w, 500, "db error")
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(body.OldPassword)); err != nil {
+		respondErr(w, 401, "current password is incorrect")
+		return
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), 12)
+	if err != nil {
+		respondErr(w, 500, "hash error")
+		return
+	}
+
+	_, err = db.Pool.Exec(ctx,
+		`UPDATE users SET password_hash=$1 WHERE id=$2`,
+		string(newHash), claims.UserID,
+	)
+	if err != nil {
+		respondErr(w, 500, "db error")
+		return
+	}
+	respond(w, 200, map[string]any{"ok": true})
+}
+
 func randomCode(n int) string {
 	const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 	b := make([]byte, n)
