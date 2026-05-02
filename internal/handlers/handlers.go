@@ -623,6 +623,198 @@ func ChangePassword(w http.ResponseWriter, r *http.Request) {
 	respond(w, 200, map[string]any{"ok": true})
 }
 
+// GET /api/stats — статистика по очкам за день/неделю/месяц/всё время для всей семьи
+func GetStats(w http.ResponseWriter, r *http.Request) {
+	claims := auth.GetClaims(r)
+	ctx := context.Background()
+
+	// Получаем всех участников семьи
+	memberRows, err := db.Pool.Query(ctx,
+		`SELECT id, name, avatar, color FROM users WHERE family_id=$1 ORDER BY id ASC`,
+		claims.FamilyID,
+	)
+	if err != nil {
+		respondErr(w, 500, "db error")
+		return
+	}
+	defer memberRows.Close()
+
+	type MemberInfo struct {
+		ID     int    `json:"id"`
+		Name   string `json:"name"`
+		Avatar string `json:"avatar"`
+		Color  string `json:"color"`
+	}
+	var memberList []MemberInfo
+	memberIDs := []int{}
+	for memberRows.Next() {
+		var m MemberInfo
+		memberRows.Scan(&m.ID, &m.Name, &m.Avatar, &m.Color)
+		memberList = append(memberList, m)
+		memberIDs = append(memberIDs, m.ID)
+	}
+
+	// Агрегированные очки за период для каждого участника
+	type PeriodStats struct {
+		Points    int `json:"points"`
+		ChoresDone int `json:"chores_done"`
+	}
+	type MemberStats struct {
+		MemberInfo
+		Day   PeriodStats `json:"day"`
+		Week  PeriodStats `json:"week"`
+		Month PeriodStats `json:"month"`
+		All   PeriodStats `json:"all"`
+	}
+
+	statsMap := map[int]*MemberStats{}
+	for _, m := range memberList {
+		ms := &MemberStats{MemberInfo: m}
+		statsMap[m.ID] = ms
+	}
+
+	// Один запрос — все периоды сразу через CASE
+	statsRows, err := db.Pool.Query(ctx,
+		`SELECT
+			u.id,
+			COALESCE(SUM(CASE WHEN cl.logged_at >= NOW() - INTERVAL '1 day'
+				THEN (CASE WHEN cl.is_penalty THEN -cl.points ELSE cl.points END) ELSE 0 END), 0) AS day_pts,
+			COUNT(CASE WHEN cl.logged_at >= NOW() - INTERVAL '1 day' AND cl.is_penalty = false THEN 1 END) AS day_cnt,
+			COALESCE(SUM(CASE WHEN cl.logged_at >= NOW() - INTERVAL '7 days'
+				THEN (CASE WHEN cl.is_penalty THEN -cl.points ELSE cl.points END) ELSE 0 END), 0) AS week_pts,
+			COUNT(CASE WHEN cl.logged_at >= NOW() - INTERVAL '7 days' AND cl.is_penalty = false THEN 1 END) AS week_cnt,
+			COALESCE(SUM(CASE WHEN cl.logged_at >= NOW() - INTERVAL '30 days'
+				THEN (CASE WHEN cl.is_penalty THEN -cl.points ELSE cl.points END) ELSE 0 END), 0) AS month_pts,
+			COUNT(CASE WHEN cl.logged_at >= NOW() - INTERVAL '30 days' AND cl.is_penalty = false THEN 1 END) AS month_cnt,
+			COALESCE(SUM(CASE WHEN cl.is_penalty THEN -cl.points ELSE cl.points END), 0) AS all_pts,
+			COUNT(CASE WHEN cl.is_penalty = false THEN 1 END) AS all_cnt
+		FROM users u
+		LEFT JOIN chore_logs cl ON (
+			(cl.user_id = u.id AND cl.is_penalty = false) OR
+			(cl.target_user_id = u.id AND cl.is_penalty = true)
+		)
+		WHERE u.family_id = $1
+		GROUP BY u.id`,
+		claims.FamilyID,
+	)
+	if err != nil {
+		respondErr(w, 500, "db error stats")
+		return
+	}
+	defer statsRows.Close()
+
+	for statsRows.Next() {
+		var uid int
+		var dp, dc, wp, wc, mp, mc, ap, ac int
+		statsRows.Scan(&uid, &dp, &dc, &wp, &wc, &mp, &mc, &ap, &ac)
+		if ms, ok := statsMap[uid]; ok {
+			ms.Day   = PeriodStats{dp, dc}
+			ms.Week  = PeriodStats{wp, wc}
+			ms.Month = PeriodStats{mp, mc}
+			ms.All   = PeriodStats{ap, ac}
+		}
+	}
+
+	// Топ-дела за всё время для каждого участника (топ-3)
+	type TopChore struct {
+		Name  string `json:"name"`
+		Emoji string `json:"emoji"`
+		Count int    `json:"count"`
+	}
+	type MemberTopChores struct {
+		UserID int        `json:"user_id"`
+		Top    []TopChore `json:"top"`
+	}
+
+	topRows, err := db.Pool.Query(ctx,
+		`SELECT cl.user_id, cl.chore_name, cl.chore_emoji, COUNT(*) as cnt
+		 FROM chore_logs cl
+		 JOIN users u ON u.id = cl.user_id
+		 WHERE u.family_id = $1 AND cl.is_penalty = false
+		 GROUP BY cl.user_id, cl.chore_name, cl.chore_emoji
+		 ORDER BY cl.user_id, cnt DESC`,
+		claims.FamilyID,
+	)
+	topChoresMap := map[int][]TopChore{}
+	if err == nil {
+		defer topRows.Close()
+		for topRows.Next() {
+			var uid int
+			var name, emoji string
+			var cnt int
+			topRows.Scan(&uid, &name, &emoji, &cnt)
+			if len(topChoresMap[uid]) < 3 {
+				topChoresMap[uid] = append(topChoresMap[uid], TopChore{name, emoji, cnt})
+			}
+		}
+	}
+
+	// Activity по дням за последние 14 дней
+	type DayActivity struct {
+		Date   string `json:"date"`
+		Points int    `json:"points"`
+	}
+	type MemberActivity struct {
+		UserID   int           `json:"user_id"`
+		Activity []DayActivity `json:"activity"`
+	}
+
+	actRows, err := db.Pool.Query(ctx,
+		`SELECT affected_user, TO_CHAR(day, 'YYYY-MM-DD') as day_str, SUM(pts) as total_pts
+		 FROM (
+		   SELECT cl.user_id AS affected_user,
+		          DATE(cl.logged_at AT TIME ZONE 'UTC') AS day,
+		          cl.points AS pts
+		   FROM chore_logs cl
+		   JOIN users u ON u.id = cl.user_id
+		   WHERE u.family_id = $1
+		     AND cl.is_penalty = false
+		     AND cl.logged_at >= NOW() - INTERVAL '14 days'
+		   UNION ALL
+		   SELECT cl.target_user_id AS affected_user,
+		          DATE(cl.logged_at AT TIME ZONE 'UTC') AS day,
+		          -cl.points AS pts
+		   FROM chore_logs cl
+		   JOIN users u ON u.id = cl.target_user_id
+		   WHERE u.family_id = $1
+		     AND cl.is_penalty = true
+		     AND cl.logged_at >= NOW() - INTERVAL '14 days'
+		 ) sub
+		 GROUP BY affected_user, day
+		 ORDER BY affected_user, day`,
+		claims.FamilyID,
+	)
+	activityMap := map[int][]DayActivity{}
+	if err == nil {
+		defer actRows.Close()
+		for actRows.Next() {
+			var uid int
+			var day string
+			var pts int
+			actRows.Scan(&uid, &day, &pts)
+			activityMap[uid] = append(activityMap[uid], DayActivity{day, pts})
+		}
+	}
+
+	// Собираем итоговый ответ
+	type MemberResult struct {
+		MemberStats
+		TopChores []TopChore   `json:"top_chores"`
+		Activity  []DayActivity `json:"activity"`
+	}
+	result := []MemberResult{}
+	for _, m := range memberList {
+		ms := statsMap[m.ID]
+		result = append(result, MemberResult{
+			MemberStats: *ms,
+			TopChores:   topChoresMap[m.ID],
+			Activity:    activityMap[m.ID],
+		})
+	}
+
+	respond(w, 200, result)
+}
+
 func randomCode(n int) string {
 	const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 	b := make([]byte, n)

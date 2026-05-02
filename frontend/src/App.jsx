@@ -157,6 +157,399 @@ function AuthScreen({ onAuth }) {
   );
 }
 
+// ─── Stats Page ───────────────────────────────────────────────────────────────
+function StatsPage({ members, myID }) {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState("week");
+  // compareID — участник для сравнения (null = никого)
+  const [compareID, setCompareID] = useState(null);
+
+  useEffect(() => {
+    api.getStats().then(data => {
+      setStats(data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const periodLabel = { day: "День", week: "Неделя", month: "Месяц", all: "Всё время" };
+
+  if (loading) return (
+    <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
+      display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12,
+      fontFamily:"'Nunito',system-ui,sans-serif", paddingBottom:72 }}>
+      <div style={{ fontSize:40, animation:"spin 1s linear infinite" }}>📊</div>
+      <div style={{ fontSize:14, color:"#444", fontWeight:700 }}>Загружаем статистику…</div>
+      <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+
+  if (!stats || stats.length === 0) return (
+    <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
+      display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12,
+      fontFamily:"'Nunito',system-ui,sans-serif", paddingBottom:72 }}>
+      <div style={{ fontSize:48 }}>📭</div>
+      <div style={{ fontSize:16, color:"#555", fontWeight:700 }}>Пока нет данных</div>
+    </div>
+  );
+
+  const me = stats.find(m => m.id === myID);
+  const them = compareID ? stats.find(m => m.id === compareID) : null;
+
+  const sorted = [...stats].sort((a, b) => (b[period]?.points ?? 0) - (a[period]?.points ?? 0));
+  const maxPts = Math.max(...sorted.map(m => m[period]?.points ?? 0), 1);
+
+  // Локальные даты без смещения таймзоны
+  const todayLocal = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  })();
+  const last14 = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (13 - i));
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  });
+
+  // Карты активности
+  const myActMap = {};
+  (me?.activity || []).forEach(a => { myActMap[a.date] = a.points; });
+  const themActMap = {};
+  (them?.activity || []).forEach(a => { themActMap[a.date] = a.points; });
+
+  // Максимум для гистограммы с учётом обоих участников
+  const actMax = Math.max(
+    ...last14.map(d => myActMap[d] ?? 0),
+    ...last14.map(d => themActMap[d] ?? 0),
+    1
+  );
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
+      overflowY:"auto", fontFamily:"'Nunito',system-ui,sans-serif", paddingBottom:80 }}>
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
+
+      <div style={{ padding:"max(20px,env(safe-area-inset-top)) 20px 0" }}>
+        <div style={{ fontSize:11, fontWeight:700, letterSpacing:3, color:"#666", textTransform:"uppercase", marginBottom:4 }}>
+          Семейная
+        </div>
+        <div style={{ fontSize:22, fontWeight:900, color:"#F0EEF6", marginBottom:20 }}>
+          📊 Статистика
+        </div>
+
+        {/* Period selector */}
+        <div style={{ display:"flex", background:"#1E1E35", borderRadius:14, padding:4, marginBottom:24, gap:3 }}>
+          {Object.entries(periodLabel).map(([k, l]) => (
+            <button key={k} onClick={() => setPeriod(k)}
+              style={{ flex:1, padding:"9px 4px", border:"none", borderRadius:10, cursor:"pointer",
+                fontFamily:"inherit", fontWeight:800, fontSize:11, transition:"all 0.2s",
+                background: period === k ? "#FFE66D" : "transparent",
+                color: period === k ? "#0F0F1A" : "#555" }}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Рейтинг ── */}
+        <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
+          textTransform:"uppercase", marginBottom:10 }}>
+          Рейтинг — {periodLabel[period].toLowerCase()}
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:28, animation:"fadeIn 0.3s ease" }}>
+          {sorted.map((m, i) => {
+            const pts = m[period]?.points ?? 0;
+            const cnt = m[period]?.chores_done ?? 0;
+            const pct = maxPts > 0 ? (pts / maxPts) * 100 : 0;
+            const isMe = m.id === myID;
+            const isCompared = m.id === compareID;
+            const medals = ["🥇","🥈","🥉"];
+            return (
+              <div key={m.id}
+                style={{ background: isMe ? `${m.color}18` : "#1E1E35",
+                  border: isCompared ? `2px solid ${m.color}` : isMe ? `1px solid ${m.color}44` : "1px solid #2a2a3e",
+                  borderRadius:18, padding:"14px 16px", transition:"all 0.2s" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                  <div style={{ fontSize:20, width:28, textAlign:"center" }}>
+                    {medals[i] || <span style={{ fontSize:13, fontWeight:800, color:"#444" }}>#{i+1}</span>}
+                  </div>
+                  <div style={{ fontSize:26 }}>{m.avatar}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontWeight:800, fontSize:14 }}>{m.name}{isMe ? " (я)" : ""}</div>
+                    <div style={{ fontSize:11, color:"#555" }}>{cnt} {cnt === 1 ? "дело" : cnt < 5 ? "дела" : "дел"}</div>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontWeight:900, fontSize:20,
+                        color: pts > 0 ? m.color : pts < 0 ? "#FF6B6B" : "#444" }}>
+                        {pts > 0 ? "+" : ""}{pts}
+                      </div>
+                      <div style={{ fontSize:10, color:"#555" }}>очков</div>
+                    </div>
+                    {/* Кнопка сравнения — только для чужих */}
+                    {!isMe && (
+                      <button
+                        onClick={() => setCompareID(isCompared ? null : m.id)}
+                        style={{ background: isCompared ? m.color : "#2a2a3e",
+                          border:"none", borderRadius:10, padding:"6px 8px",
+                          cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+                          flexShrink:0, transition:"all 0.2s" }}
+                        title={isCompared ? "Убрать сравнение" : "Сравнить со мной"}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M8 7h12M8 12h8M8 17h4" stroke={isCompared ? "#0F0F1A" : "#888"}
+                            strokeWidth="2.5" strokeLinecap="round"/>
+                          <path d="M4 7l-2 2 2 2M4 17l-2-2 2-2" stroke={isCompared ? "#0F0F1A" : "#888"}
+                            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div style={{ background:"#0F0F1A", borderRadius:999, height:6, overflow:"hidden" }}>
+                  <div style={{ height:"100%", borderRadius:999,
+                    width:`${Math.max(0, pct)}%`,
+                    background:`linear-gradient(90deg,${m.color},${m.color}88)`,
+                    transition:"width 0.6s cubic-bezier(0.4,0,0.2,1)" }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Моя статистика (+ сравнение) ── */}
+        {me && (
+          <>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2, textTransform:"uppercase" }}>
+                Моя статистика
+              </div>
+              {them && (
+                <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, fontWeight:700 }}>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background: me.color }} />
+                  <span style={{ color:"#555" }}>Я</span>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background: them.color, marginLeft:4 }} />
+                  <span style={{ color:"#555" }}>{them.name}</span>
+                </div>
+              )}
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:24 }}>
+              {[
+                { label:"Сегодня",   periodKey:"day" },
+                { label:"Неделя",    periodKey:"week" },
+                { label:"Месяц",     periodKey:"month" },
+                { label:"Всё время", periodKey:"all" },
+              ].map(({ label, periodKey }) => {
+                const myPts  = me[periodKey]?.points ?? 0;
+                const myCnt  = me[periodKey]?.chores_done ?? 0;
+                const thPts  = them?.[periodKey]?.points ?? null;
+                const thCnt  = them?.[periodKey]?.chores_done ?? null;
+                return (
+                  <div key={label} style={{ background:"#1E1E35", borderRadius:16, padding:"14px 16px",
+                    border:"1px solid #2a2a3e" }}>
+                    <div style={{ fontSize:11, color:"#555", fontWeight:700, marginBottom:8 }}>{label.toUpperCase()}</div>
+                    {/* Моя строка */}
+                    <div style={{ display:"flex", alignItems:"baseline", gap:6, marginBottom: them ? 6 : 0 }}>
+                      {them && <div style={{ width:6, height:6, borderRadius:"50%", background: me.color, flexShrink:0, marginBottom:2 }} />}
+                      <div style={{ fontSize:26, fontWeight:900, lineHeight:1,
+                        color: myPts > 0 ? me.color : myPts < 0 ? "#FF6B6B" : "#666" }}>
+                        {myPts > 0 ? "+" : ""}{myPts}
+                      </div>
+                    </div>
+                    <div style={{ fontSize:11, color:"#666", marginBottom: them ? 8 : 0 }}>
+                      {myCnt} {myCnt === 1 ? "дело" : myCnt < 5 ? "дела" : "дел"}
+                    </div>
+                    {/* Строка сравниваемого */}
+                    {them && thPts !== null && (
+                      <>
+                        <div style={{ height:1, background:"#2a2a3e", marginBottom:8 }} />
+                        <div style={{ display:"flex", alignItems:"baseline", gap:6, marginBottom:4 }}>
+                          <div style={{ width:6, height:6, borderRadius:"50%", background: them.color, flexShrink:0, marginBottom:2 }} />
+                          <div style={{ fontSize:22, fontWeight:900, lineHeight:1,
+                            color: thPts > 0 ? them.color : thPts < 0 ? "#FF6B6B" : "#555" }}>
+                            {thPts > 0 ? "+" : ""}{thPts}
+                          </div>
+                        </div>
+                        <div style={{ fontSize:11, color:"#555" }}>
+                          {thCnt} {thCnt === 1 ? "дело" : thCnt < 5 ? "дела" : "дел"}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Гистограмма активности ── */}
+            {(() => {
+              return (
+                <>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                    <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2, textTransform:"uppercase" }}>
+                      Активность — 14 дней
+                    </div>
+                    {them && (
+                      <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:10, fontWeight:700 }}>
+                        <span style={{ display:"flex", alignItems:"center", gap:3 }}>
+                          <span style={{ display:"inline-block", width:10, height:10, borderRadius:2, background: me.color }} />
+                          <span style={{ color:"#555" }}>Я</span>
+                        </span>
+                        <span style={{ display:"flex", alignItems:"center", gap:3 }}>
+                          <span style={{ display:"inline-block", width:10, height:10, borderRadius:2, background: them.color }} />
+                          <span style={{ color:"#555" }}>{them.name}</span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ background:"#1E1E35", borderRadius:16, padding:"16px 12px",
+                    border:"1px solid #2a2a3e", marginBottom:24 }}>
+                    <div style={{ display:"flex", alignItems:"flex-end", gap:4, height:80 }}>
+                      {last14.map((date) => {
+                        const myPts  = myActMap[date] ?? 0;
+                        const thPts  = them ? (themActMap[date] ?? 0) : 0;
+                        const myH    = myPts > 0 ? Math.max(6, (myPts / actMax) * 72) : 4;
+                        const thH    = thPts > 0 ? Math.max(6, (thPts / actMax) * 72) : 0;
+                        const isToday = date === todayLocal;
+                        const [, , dayStr] = date.split('-');
+                        const dayNum = parseInt(dayStr, 10);
+                        return (
+                          <div key={date} style={{ flex:1, display:"flex", flexDirection:"column",
+                            alignItems:"center", gap:4, justifyContent:"flex-end" }}>
+                            {/* Наложенные столбики: them за моим */}
+                            <div style={{ width:"100%", position:"relative", display:"flex",
+                              alignItems:"flex-end", justifyContent:"center" }}>
+                              {/* Столбик them (позади, чуть шире) */}
+                              {them && thH > 0 && (
+                                <div style={{ position:"absolute", bottom:0, left:0, right:0,
+                                  height:thH, borderRadius:4,
+                                  background:`linear-gradient(180deg,${them.color},${them.color}66)`,
+                                  opacity:0.7 }} />
+                              )}
+                              {/* Столбик my (спереди) */}
+                              <div style={{ position:"relative", width:"100%",
+                                height: myPts > 0 ? myH : 4, borderRadius:4,
+                                background: myPts > 0
+                                  ? `linear-gradient(180deg,${me.color},${me.color}66)`
+                                  : "#2a2a3e",
+                                border: isToday ? `1px solid ${me.color}` : "none",
+                                transition:"height 0.4s ease" }} />
+                            </div>
+                            <div style={{ fontSize:9, color: isToday ? me.color : "#444",
+                              fontWeight: isToday ? 800 : 600 }}>
+                              {dayNum}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* ── Топ дел ── */}
+            {me.top_chores && me.top_chores.length > 0 && (
+              <>
+                <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
+                  textTransform:"uppercase", marginBottom:10 }}>
+                  Любимые дела
+                </div>
+                <div style={{ background:"#1E1E35", borderRadius:16, padding:"4px 0",
+                  border:"1px solid #2a2a3e", marginBottom:24 }}>
+                  {me.top_chores.map((tc, i) => (
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
+                      padding:"12px 16px",
+                      borderBottom: i < me.top_chores.length - 1 ? "1px solid #2a2a3e" : "none" }}>
+                      <div style={{ fontSize:24 }}>{tc.emoji}</div>
+                      <div style={{ flex:1, fontWeight:700, fontSize:14 }}>{tc.name}</div>
+                      <div style={{ fontSize:12, color:"#888", fontWeight:800 }}>×{tc.count}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {/* ── Блок "Сравнение с" ── */}
+        {them && me && (
+          <>
+            <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
+              textTransform:"uppercase", marginBottom:10 }}>
+              Сравнение с {them.name}
+            </div>
+            <div style={{ background:`${them.color}11`, borderRadius:16, padding:16,
+              border:`1px solid ${them.color}33`, marginBottom:16, animation:"fadeIn 0.3s ease" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+                <div style={{ fontSize:32 }}>{them.avatar}</div>
+                <div style={{ fontWeight:900, fontSize:17 }}>{them.name}</div>
+                <button onClick={() => setCompareID(null)}
+                  style={{ marginLeft:"auto", background:"#2a2a3e", border:"none", borderRadius:8,
+                    padding:"4px 10px", cursor:"pointer", fontSize:11, fontWeight:700,
+                    color:"#666", fontFamily:"inherit" }}>
+                  Убрать ✕
+                </button>
+              </div>
+              {[
+                { label:"День",    myPts: me.day?.points ?? 0,   theirPts: them.day?.points ?? 0 },
+                { label:"Неделя",  myPts: me.week?.points ?? 0,  theirPts: them.week?.points ?? 0 },
+                { label:"Месяц",   myPts: me.month?.points ?? 0, theirPts: them.month?.points ?? 0 },
+                { label:"Всё вр.", myPts: me.all?.points ?? 0,   theirPts: them.all?.points ?? 0 },
+              ].map(({ label, myPts, theirPts }) => {
+                const total = Math.max(myPts + theirPts, 1);
+                const myPct = myPts / total * 100;
+                const theirPct = theirPts / total * 100;
+                const meWin = myPts >= theirPts;
+                return (
+                  <div key={label} style={{ marginBottom:12 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between",
+                      fontSize:11, fontWeight:700, color:"#666", marginBottom:5 }}>
+                      <span style={{ color: meWin ? me.color : "#555" }}>
+                        Я: {myPts > 0 ? "+" : ""}{myPts}
+                      </span>
+                      <span style={{ color:"#666" }}>{label}</span>
+                      <span style={{ color: !meWin ? them.color : "#555" }}>
+                        {them.name}: {theirPts > 0 ? "+" : ""}{theirPts}
+                      </span>
+                    </div>
+                    <div style={{ display:"flex", gap:2, borderRadius:999, overflow:"hidden", height:8 }}>
+                      <div style={{ flex: myPct, background: me.color,
+                        minWidth: myPts > 0 ? 4 : 0, transition:"flex 0.5s ease" }} />
+                      <div style={{ flex: theirPct, background: them.color,
+                        minWidth: theirPts > 0 ? 4 : 0, transition:"flex 0.5s ease" }} />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* их топ дел */}
+              {them.top_chores && them.top_chores.length > 0 && (
+                <div style={{ marginTop:16 }}>
+                  <div style={{ fontSize:10, color:"#555", fontWeight:700, marginBottom:8 }}>
+                    ЛЮБИМЫЕ ДЕЛА
+                  </div>
+                  {them.top_chores.map((tc, i) => (
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:8,
+                      padding:"6px 0",
+                      borderBottom: i < them.top_chores.length - 1 ? "1px solid #2a2a3e" : "none" }}>
+                      <span style={{ fontSize:18 }}>{tc.emoji}</span>
+                      <span style={{ flex:1, fontSize:13, fontWeight:700 }}>{tc.name}</span>
+                      <span style={{ fontSize:11, color:"#888" }}>×{tc.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {!them && stats.length > 1 && (
+          <div style={{ fontSize:11, color:"#444", textAlign:"center", marginBottom:24 }}>
+            Нажми ⇄ на участника, чтобы сравнить
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [authed, setAuthed] = useState(!!ls.get("token"));
@@ -947,13 +1340,7 @@ export default function App() {
 
       {/* Stub pages */}
       {navTab === "stats" && (
-        <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,
-          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-          gap:12, fontFamily:"'Nunito',system-ui,sans-serif", paddingBottom:72 }}>
-          <div style={{ fontSize:56 }}>📊</div>
-          <div style={{ fontSize:20, fontWeight:900, color:"#F0EEF6" }}>Статистика</div>
-          <div style={{ fontSize:13, color:"#444" }}>Скоро здесь будет что-то интересное</div>
-        </div>
+        <StatsPage members={members} myID={myID} />
       )}
       {navTab === "settings" && (
         <div style={{ position:"fixed", inset:0, background:"#0F0F1A", zIndex:400,

@@ -58,6 +58,7 @@ func main() {
 		r.Delete("/api/log/{logID}", handlers.DeleteLog)
 		r.Patch("/api/user", handlers.UpdateUser)
 		r.Patch("/api/user/password", handlers.ChangePassword)
+		r.Get("/api/stats", handlers.GetStats)
 	})
 
 	// Serve React frontend (built static files)

@@ -35,4 +35,5 @@ export const api = {
   deleteLog: (logID) => req('DELETE', `/log/${logID}`),
   updateUser: (body) => req('PATCH', '/user', body),
   changePassword: (body) => req('PATCH', '/user/password', body),
+  getStats: () => req('GET', '/stats'),
 }
