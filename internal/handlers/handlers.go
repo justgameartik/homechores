@@ -484,10 +484,12 @@ func DeleteLog(w http.ResponseWriter, r *http.Request) {
 	respond(w, 200, map[string]string{"status": "deleted"})
 }
 
-// GET /api/history/{userID}
+// GET /api/history/{userID}?offset=0
 func GetHistory(w http.ResponseWriter, r *http.Request) {
 	claims := auth.GetClaims(r)
 	userID, _ := strconv.Atoi(chi.URLParam(r, "userID"))
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	const limit = 50
 
 	ctx := context.Background()
 	var famID int
@@ -501,8 +503,8 @@ func GetHistory(w http.ResponseWriter, r *http.Request) {
 		`SELECT id, chore_name, chore_emoji, points, is_penalty, logged_at
 		 FROM chore_logs
 		 WHERE (user_id=$1 AND is_penalty=false) OR (target_user_id=$1 AND is_penalty=true)
-		 ORDER BY logged_at DESC LIMIT 50`,
-		userID,
+		 ORDER BY logged_at DESC LIMIT $2 OFFSET $3`,
+		userID, limit, offset,
 	)
 	defer rows.Close()
 
@@ -512,7 +514,20 @@ func GetHistory(w http.ResponseWriter, r *http.Request) {
 		rows.Scan(&l.ID, &l.ChoreName, &l.ChoreEmoji, &l.Points, &l.IsPenalty, &l.LoggedAt)
 		logs = append(logs, l)
 	}
-	respond(w, 200, logs)
+
+	// hasMore: попробуем вытащить ещё одну запись
+	var total int
+	db.Pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM chore_logs
+		 WHERE (user_id=$1 AND is_penalty=false) OR (target_user_id=$1 AND is_penalty=true)`,
+		userID,
+	).Scan(&total)
+
+	respond(w, 200, map[string]any{
+		"logs":     logs,
+		"has_more": offset+len(logs) < total,
+		"total":    total,
+	})
 }
 
 // DELETE /api/members/{userID}

@@ -27,7 +27,7 @@ export const api = {
   addChore: (body) => req('POST', '/chores', body),
   logChore: (chore_id, target_user_id) => req('POST', '/log', { chore_id, target_user_id }),
   quickLog: (body) => req('POST', '/log/quick', body),
-  getHistory: (userID) => req('GET', `/history/${userID}`),
+  getHistory: (userID, offset = 0) => req('GET', `/history/${userID}?offset=${offset}`),
   removeMember: (userID) => req('DELETE', `/members/${userID}`),
   resetFamily: () => req('DELETE', '/family/reset'),
   updateChore: (choreID, body) => req('PUT', `/chores/${choreID}`, body),

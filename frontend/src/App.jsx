@@ -558,6 +558,9 @@ export default function App() {
   const [chores, setChores] = useState([]);
   const [activeMemberID, setActiveMemberID] = useState(null);
   const [history, setHistory] = useState([]);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const historyBottomRef = useRef(null);
   const [view, setView] = useState("home");
   const [activeTab, setActiveTab] = useState("chores");
   const [flash, setFlash] = useState(null);
@@ -590,6 +593,7 @@ export default function App() {
   const [pwForm, setPwForm] = useState({ old: "", new1: "", new2: "" });
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState(false);
+  const [choreListOpen, setChoreListOpen] = useState(false);
 
   const myID = Number(ls.get("user_id"));
 
@@ -611,10 +615,17 @@ export default function App() {
     setChores(data);
   }, []);
 
-  const loadHistory = useCallback(async (uid) => {
+  const loadHistory = useCallback(async (uid, offset = 0, append = false) => {
     if (!uid) return;
-    const data = await api.getHistory(uid);
-    setHistory(data);
+    if (offset === 0) setHistory([]);
+    setHistoryLoading(true);
+    try {
+      const data = await api.getHistory(uid, offset);
+      const logs = data.logs ?? [];
+      setHistory(prev => append ? [...prev, ...logs] : logs);
+      setHistoryHasMore(data.has_more ?? false);
+    } catch(e) { console.error(e); }
+    setHistoryLoading(false);
   }, []);
 
   useEffect(() => {
@@ -624,8 +635,24 @@ export default function App() {
   }, [authed]);
 
   useEffect(() => {
-    if (activeMemberID) loadHistory(activeMemberID);
+    if (activeMemberID) loadHistory(activeMemberID, 0, false);
   }, [activeMemberID]);
+
+  // Infinite scroll — срабатывает когда sentinel виден
+  useEffect(() => {
+    const el = historyBottomRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && historyHasMore && !historyLoading) {
+          loadHistory(activeMemberID, history.length, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [historyHasMore, historyLoading, history.length, activeMemberID]);
 
   async function doLogChore(chore) {
     if (chore.is_penalty) {
@@ -862,7 +889,7 @@ export default function App() {
         <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:4 }}>
           {members.map(m => (
             <div key={m.id} className="btn"
-              onClick={() => { setActiveMemberID(m.id); setView("home"); setActiveTab(m.id === myID ? "chores" : "history"); }}
+              onClick={() => { setActiveMemberID(m.id); setView("home"); setActiveTab(m.id === myID ? "chores" : "history"); setHistoryHasMore(false); }}
               style={{ display:"flex", flexDirection:"column", alignItems:"center",
                 padding:"8px 12px", borderRadius:16, flexShrink:0,
                 background: activeMemberID===m.id ? m.color+"33" : "#1E1E35",
@@ -1121,7 +1148,7 @@ export default function App() {
           {activeTab === "history" && history.length > 0 && (
             <>
               <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                {history.slice(0, 10).map(h => {
+                {history.map(h => {
                   const isMine = activeMemberID === myID;
                   const offset = isMine ? (swipeState[h.id] || 0) : 0;
                   return (
@@ -1167,6 +1194,18 @@ export default function App() {
                   );
                 })}
               </div>
+              {/* Sentinel для infinite scroll */}
+              <div ref={historyBottomRef} style={{ height:1 }} />
+              {historyLoading && (
+                <div style={{ textAlign:"center", padding:"12px 0", color:"#444", fontSize:13 }}>
+                  Загружаем…
+                </div>
+              )}
+              {!historyHasMore && history.length > 0 && (
+                <div style={{ textAlign:"center", padding:"12px 0", color:"#333", fontSize:12 }}>
+                  Всего {history.length} {history.length === 1 ? "запись" : history.length < 5 ? "записи" : "записей"}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1213,6 +1252,94 @@ export default function App() {
                 cursor:"pointer", fontFamily:"inherit" }}>
               Отмена
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Chore list modal — открывается из таба История */}
+      {choreListOpen && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)",
+          display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:1000 }}
+          onClick={() => setChoreListOpen(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background:"#1A1A2E", borderRadius:"24px 24px 0 0",
+              width:"100%", maxWidth:480, maxHeight:"80vh", display:"flex", flexDirection:"column" }}>
+            {/* Header */}
+            <div style={{ padding:"20px 20px 12px", flexShrink:0 }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                <div style={{ fontSize:16, fontWeight:900 }}>📋 Список дел</div>
+                <button onClick={() => setChoreListOpen(false)}
+                  style={{ background:"#2a2a3e", border:"none", borderRadius:8, padding:"6px 10px",
+                    cursor:"pointer", fontSize:13, fontWeight:700, color:"#666", fontFamily:"inherit" }}>
+                  ✕
+                </button>
+              </div>
+              <div style={{ fontSize:12, color:"#555" }}>Нажми на дело, чтобы отметить выполнение</div>
+            </div>
+            {/* Scrollable list */}
+            <div style={{ overflowY:"auto", padding:"0 16px 32px" }}>
+              {/* Обычные дела */}
+              <div style={{ fontSize:11, fontWeight:700, color:"#666", letterSpacing:2,
+                textTransform:"uppercase", marginBottom:10 }}>Дела</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:20 }}>
+                {regularChores.map(c => (
+                  <button key={c.id} className="btn"
+                    disabled={loading}
+                    onClick={async () => {
+                      if (c.is_penalty) return;
+                      setLoading(true);
+                      try {
+                        await api.logChore(c.id, null);
+                        setFlash({ points: c.points, name: c.name });
+                        setTimeout(() => setFlash(null), 1800);
+                        setChoreListOpen(false);
+                        await loadFamily();
+                        await loadHistory(activeMemberID);
+                      } catch(e) { console.error(e); }
+                      setLoading(false);
+                    }}
+                    style={{ background:"#1E1E35", border:"1px solid #2a2a3e",
+                      borderRadius:14, padding:"12px 14px", display:"flex", alignItems:"center", gap:12,
+                      cursor:"pointer", textAlign:"left", color:"#F0EEF6", fontFamily:"inherit" }}>
+                    <div style={{ fontSize:24, flexShrink:0 }}>{c.emoji}</div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:14, fontWeight:700 }}>{c.name}</div>
+                    </div>
+                    <div style={{ fontSize:13, fontWeight:900, color:"#FFE66D", flexShrink:0 }}>
+                      +{c.points} pts
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {/* Штрафы */}
+              {penaltyChores.length > 0 && (
+                <>
+                  <div style={{ fontSize:11, fontWeight:700, color:"#FF6B6B", letterSpacing:2,
+                    textTransform:"uppercase", marginBottom:10 }}>⚠️ Штрафы</div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                    {penaltyChores.map(c => (
+                      <button key={c.id} className="btn"
+                        disabled={loading}
+                        onClick={() => {
+                          setChoreListOpen(false);
+                          setPenaltyTarget(c);
+                        }}
+                        style={{ background:"#FF6B6B11", border:"1px solid #FF6B6B33",
+                          borderRadius:14, padding:"12px 14px", display:"flex", alignItems:"center", gap:12,
+                          cursor:"pointer", textAlign:"left", color:"#F0EEF6", fontFamily:"inherit" }}>
+                        <div style={{ fontSize:24, flexShrink:0 }}>{c.emoji}</div>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:14, fontWeight:700 }}>{c.name}</div>
+                        </div>
+                        <div style={{ fontSize:13, fontWeight:900, color:"#FF6B6B", flexShrink:0 }}>
+                          −{c.points} pts
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
